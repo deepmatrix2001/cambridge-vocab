@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>劍橋英檢 KET/PET 學習網頁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            .print-only { display: block; }
+            body { background: white; padding: 0; }
+            .vocab-card { break-inside: avoid; border-bottom: 1px solid #ddd; }
+        }
+        .correct { background-color: #d1fae5; border-color: #10b981; }
+        .wrong { background-color: #fee2e2; border-color: #ef4444; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- 導覽列 -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg no-print">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold italic">Cambridge Prep: KET & PET</h1>
+            <div class="space-x-4">
+                <button onclick="switchMode('list')" class="hover:underline">單字清單</button>
+                <button onclick="switchMode('quiz')" class="hover:underline">互動測驗</button>
+                <button onclick="window.print()" class="bg-white text-blue-600 px-4 py-1 rounded shadow hover:bg-blue-50 transition">列印單字表</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <!-- 學習模式：單字表 -->
+        <div id="list-mode" class="block">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-blue-100 p-4 border-b border-blue-200">
+                    <h2 class="text-xl font-bold text-blue-800">Spelling List (Semester 2 - Page 13/14)</h2>
+                    <p class="text-sm text-blue-600 italic">Level: K3-2 | KET & PET Schools</p>
+                </div>
+                
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 border w-1/4">Vocabulary</th>
+                            <th class="py-3 px-6 border w-24 text-center">Type</th>
+                            <th class="py-3 px-6 border">Definition & Example</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vocab-table-body" class="text-gray-600 text-sm">
+                        <!-- 由 JS 填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 測驗模式 -->
+        <div id="quiz-mode" class="hidden no-print">
+            <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">詞彙挑戰測驗</h2>
+                    <span id="quiz-progress" class="text-blue-600 font-semibold text-lg">Question 1/20</span>
+                </div>
+                
+                <div id="quiz-container">
+                    <!-- 題目內容 -->
+                </div>
+
+                <div id="quiz-result" class="hidden mt-8 p-6 bg-blue-50 rounded-lg text-center">
+                    <h3 class="text-3xl font-bold text-blue-800 mb-2">測驗結束！</h3>
+                    <p id="score-text" class="text-xl text-blue-600">你的得分：0 / 20</p>
+                    <button onclick="resetQuiz()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition">重新挑戰</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 單字庫數據 (包含 A2 與 B1 等級)
+        const vocabularyData = [
+            { word: "juice", type: "n", definition: "The water that we drink from fruit.", example: "I do not like the taste of apple juice.", chinese: "果汁" },
+            { word: "price", type: "n", definition: "How much money something costs.", example: "Do you know the price of a new video game?", chinese: "價格" },
+            { word: "castle", type: "n", definition: "The house that a king and queen live in.", example: "The king lives in an old castle.", chinese: "城堡" },
+            { word: "muffin", type: "n", definition: "A breakfast food that looks like a cupcake.", example: "He likes to eat banana muffins for breakfast.", chinese: "瑪芬/小蛋糕" },
+            { word: "celery", type: "n", definition: "A long, green, hard, crunchy vegetable.", example: "I put peanut butter and raisins on my celery.", chinese: "芹菜" },
+            { word: "rollerblading", type: "v/n", definition: "A sport you do with special shoes that have wheels on the bottom.", example: "We went rollerblading on the weekend.", chinese: "直排輪" },
+            { word: "think", type: "v", definition: "To have ideas.", example: "I think we should go to the movies tomorrow.", chinese: "思考" },
+            { word: "piano", type: "n", definition: "A big musical instrument with black and white keys.", example: "He learns to play piano on Tuesday nights.", chinese: "鋼琴" },
+            { word: "friend", type: "n", definition: "A person you like to spend time with.", example: "My friend and I like to play at the park.", chinese: "朋友" },
+            { word: "sneeze", type: "v", definition: "To shoot air out of your nose while making a loud sound.", example: "He sneezed when he smelled the black pepper.", chinese: "打噴嚏" },
+            { word: "genius", type: "n", definition: "Someone who is very, very smart.", example: "My brother is a genius! He can answer any math question.", chinese: "天才" },
+            { word: "cracker", type: "n", definition: "A cookie that is hard and salty (not sweet).", example: "I love to eat crackers, but I don't like cookies.", chinese: "薄脆餅乾" },
+            { word: "gentle", type: "adj", definition: "Someone is very caring and speaks softly to others.", example: "We must be gentle when we hold a baby.", chinese: "溫柔的" },
+            { word: "coral", type: "n", definition: "The colorful \"rocks\" found in the ocean.", example: "Many fish live in and around the coral.", chinese: "珊瑚" },
+            { word: "gorilla", type: "n", definition: "A large ape that lives in the jungles of Africa.", example: "Gorillas are some of the strongest animals on Earth.", chinese: "大猩猩" },
+            { word: "neighborhood", type: "n", definition: "The area that is close to your house.", example: "There are three parks in our neighborhood.", chinese: "社區/鄰里" },
+            { word: "dangerous", type: "adj", definition: "Someone or something that could hurt you.", example: "It is dangerous to ride a motorcycle.", chinese: "危險的" },
+            { word: "attack", type: "v/n", definition: "To try and hurt a person.", example: "Sharks almost never attack people.", chinese: "攻擊" },
+            { word: "neighbor", type: "n", definition: "A person that lives close to you.", example: "My Science teacher is also my neighbor.", chinese: "鄰居" },
+            { word: "apartment", type: "n", definition: "A tall building with many homes inside.", example: "There is a giant apartment building next to the school.", chinese: "公寓" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let shuffledVocab = [];
+
+        // 初始化單字表
+        function initTable() {
+            const tbody = document.getElementById('vocab-table-body');
+            tbody.innerHTML = '';
+            vocabularyData.forEach(item => {
+                const row = `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 font-bold text-blue-700 text-lg">
+                            ${item.word} <br>
+                            <span class="text-xs text-gray-400 font-normal">${item.chinese}</span>
+                        </td>
+                        <td class="py-4 px-6 text-center italic text-orange-600">${item.type}</td>
+                        <td class="py-4 px-6">
+                            <p class="font-semibold text-gray-800">${item.definition}</p>
+                            <p class="italic text-gray-500 mt-1">"${item.example}"</p>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 切換顯示模式
+        function switchMode(mode) {
+            if (mode === 'list') {
+                document.getElementById('list-mode').classList.remove('hidden');
+                document.getElementById('quiz-mode').classList.add('hidden');
+            } else {
+                document.getElementById('list-mode').classList.add('hidden');
+                document.getElementById('quiz-mode').classList.remove('hidden');
+                resetQuiz();
+            }
+        }
+
+        // 測驗邏輯
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            shuffledVocab = [...vocabularyData].sort(() => Math.random() - 0.5);
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const container = document.getElementById('quiz-container');
+            const currentItem = shuffledVocab[currentQuestionIndex];
+            document.getElementById('quiz-progress').innerText = `Question ${currentQuestionIndex + 1}/20`;
+
+            // 隨機生成干擾項
+            let options = [currentItem.word];
+            while(options.length < 4) {
+                let randomWord = vocabularyData[Math.floor(Math.random() * vocabularyData.length)].word;
+                if(!options.includes(randomWord)) options.push(randomWord);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            container.innerHTML = `
+                <div class="mb-8">
+                    <p class="text-sm text-blue-500 font-bold uppercase tracking-wide mb-2">Definition</p>
+                    <h3 class="text-2xl font-semibold text-gray-700 mb-4">${currentItem.definition}</h3>
+                    <p class="text-gray-500 italic bg-gray-50 p-3 rounded">Example: "${currentItem.example.replace(currentItem.word, '_______')}"</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    ${options.map(opt => `
+                        <button onclick="checkAnswer('${opt}')" 
+                                class="quiz-option w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition font-medium text-lg">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function checkAnswer(selected) {
+            const correct = shuffledVocab[currentQuestionIndex].word;
+            const buttons = document.querySelectorAll('.quiz-option');
+            
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if(btn.innerText.trim() === correct) {
+                    btn.classList.add('correct');
+                } else if(btn.innerText.trim() === selected && selected !== correct) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            if (selected === correct) score++;
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < shuffledVocab.length) {
+                    showQuestion();
+                } else {
+                    finishQuiz();
+                }
+            }, 1200);
+        }
+
+        function finishQuiz() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('hidden');
+            document.getElementById('score-text').innerText = `你的得分：${score} / 20`;
+        }
+
+        // 初始化
+        window.onload = initTable;
+    </script>
+</body>
+</html>
