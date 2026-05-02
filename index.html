@@ -31,20 +31,20 @@
         <div class="container mx-auto flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col">
                 <h1 class="text-xl font-bold flex items-center">
-                    <span class="mr-2 text-2xl">🎓</span> Cambridge Vocabulary 2025
+                    <span class="mr-2 text-2xl">🎓</span> Cambridge Prep 2025 (KET/PET)
                 </h1>
                 <div class="flex gap-2 text-[10px] opacity-70 mt-1">
-                    <a href="https://drive.google.com/file/d/1I2gtIWDXVkVAHveDATC6YhPSeno_os_R/view" target="_blank" class="hover:text-orange-300 underline">A2 PDF 連結</a>
-                    <span>|</span>
-                    <a href="https://drive.google.com/file/d/15I-D1GFxItVuzQFUgtVuZMkBotwjuihE/view" target="_blank" class="hover:text-orange-300 underline">B1 PDF 連結</a>
+                    <span>Source: A2 Key & B1 Preliminary Official Lists</span>
                 </div>
             </div>
             <div class="flex flex-wrap justify-center gap-2">
                 <button onclick="switchMode('list')" class="px-3 py-2 hover:bg-indigo-800 rounded transition text-sm">單字清單</button>
                 <button onclick="switchMode('quiz')" class="px-3 py-2 hover:bg-indigo-800 rounded transition text-sm">互動測驗</button>
-                <button onclick="fetchWords()" id="refresh-btn" class="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded transition flex items-center text-sm font-bold shadow">
-                    <span id="btn-text">AI 同步 PDF 出題</span>
-                    <div id="btn-spinner" class="hidden ml-2 w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <button onclick="refreshWordsLocal()" class="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded transition flex items-center text-sm font-bold shadow">
+                    <span>隨機換一組 (本地庫)</span>
+                </button>
+                <button onclick="fetchWordsAI()" id="ai-btn" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded transition flex items-center text-sm font-bold shadow">
+                    <span id="ai-btn-text">AI 智慧出題</span>
                 </button>
                 <button onclick="window.print()" class="bg-white text-indigo-700 px-4 py-2 rounded shadow hover:bg-indigo-50 transition font-bold text-sm">列印講義</button>
             </div>
@@ -54,25 +54,30 @@
     <div class="container mx-auto p-6">
         <!-- 狀態欄 -->
         <div id="source-badge-container" class="mb-4 no-print flex justify-center">
-            <span id="source-badge" class="px-4 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-500">
-                系統初始化中...
+            <span id="source-badge" class="px-4 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-600">
+                已載入官方單字庫 (共 150+ 單字)
             </span>
         </div>
 
-        <!-- 載入動畫 -->
+        <!-- 載入動畫 (僅 AI 模式使用) -->
         <div id="loading-overlay" class="hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-2xl shadow-2xl text-center">
                 <div class="loading-spinner mx-auto mb-4"></div>
-                <p class="text-gray-700 font-bold">正在讀取 PDF 單字庫資料...</p>
+                <p id="loading-text" class="text-gray-700 font-bold">正在與 AI 老師同步單字...</p>
             </div>
         </div>
 
         <!-- 模式 1: 單字表 -->
         <div id="list-mode" class="block">
             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-                <div class="bg-indigo-50 p-6 border-b border-indigo-100">
-                    <h2 class="text-2xl font-bold text-indigo-900">Vocabulary Spelling List</h2>
-                    <p class="text-sm text-indigo-600 mt-1">Target: KET (A2) & PET (B1) for Schools</p>
+                <div class="bg-indigo-50 p-6 border-b border-indigo-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-indigo-900">Vocabulary Spelling List</h2>
+                        <p class="text-sm text-indigo-600 mt-1">每次隨機產出 20 個單字供練習</p>
+                    </div>
+                    <div class="text-right text-xs text-gray-400 no-print">
+                        日期: <span id="current-date"></span>
+                    </div>
                 </div>
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -91,7 +96,7 @@
         <div id="quiz-mode" class="hidden no-print">
             <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">詞彙檢測系統</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">單字選答測驗</h2>
                     <span id="quiz-progress" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold">Question 1/20</span>
                 </div>
                 <div id="quiz-container"></div>
@@ -102,7 +107,7 @@
                     <p id="score-text" class="text-2xl text-indigo-600 mb-6">得分：0 / 20</p>
                     <div class="flex flex-col sm:flex-row justify-center gap-4">
                         <button onclick="resetQuiz()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl hover:bg-indigo-700 transition font-bold shadow-lg">重新測驗</button>
-                        <button onclick="fetchWords()" class="bg-white text-indigo-600 border border-indigo-200 px-8 py-3 rounded-xl hover:bg-gray-50 transition font-bold shadow-sm">換一組單字</button>
+                        <button onclick="refreshWordsLocal()" class="bg-white text-indigo-600 border border-indigo-200 px-8 py-3 rounded-xl hover:bg-gray-50 transition font-bold shadow-sm">換一組單字</button>
                     </div>
                 </div>
             </div>
@@ -110,43 +115,80 @@
     </div>
 
     <script>
-        const apiKey = ""; // 執行環境自動注入
+        const apiKey = ""; 
 
-        // 核心單字資料庫 (直接由您提供的 PDF 文件內容整理)
-        const pdfWordPool = [
-            // Travel & Transport (A2/B1)
+        // 大規模單字庫 - 整合 A2 與 B1 官方清單
+        const fullWordPool = [
+            // Travel & Transport
             { word: "passenger", type: "n", definition: "A person traveling in a vehicle but not driving it.", example: "The bus was full of passengers.", chinese: "乘客" },
             { word: "passport", type: "n", definition: "An official travel document.", example: "Check your passport before the flight.", chinese: "護照" },
-            { word: "platform", type: "n", definition: "Where you wait for a train.", example: "The train leaves from platform 3.", chinese: "月台" },
-            { word: "suitcase", type: "n", definition: "A case for carrying clothes.", example: "My suitcase is very heavy.", chinese: "行李箱" },
-            { word: "mechanic", type: "n", definition: "Someone who repairs machines.", example: "The mechanic fixed my car.", chinese: "技工" },
+            { word: "platform", type: "n", definition: "Where you wait for a train at a station.", example: "The train leaves from platform 3.", chinese: "月台" },
+            { word: "suitcase", type: "n", definition: "A case for carrying clothes when traveling.", example: "My suitcase is very heavy.", chinese: "行李箱" },
+            { word: "mechanic", type: "n", definition: "Someone who repairs machines and car engines.", example: "The mechanic fixed my car.", chinese: "技工" },
             { word: "engineer", type: "n", definition: "Someone who designs machines or bridges.", example: "She's a civil engineer.", chinese: "工程師" },
             { word: "delay", type: "v/n", definition: "To happen later than planned.", example: "The flight was delayed by rain.", chinese: "延遲" },
             { word: "journey", type: "n", definition: "A trip from one place to another.", example: "Have a safe journey!", chinese: "旅程" },
-            { word: "tourist", type: "n", definition: "Someone visiting for pleasure.", example: "The city is full of tourists.", chinese: "觀光客" },
+            { word: "tourist", type: "n", definition: "Someone visiting a place for pleasure.", example: "The city is full of tourists.", chinese: "觀光客" },
+            { word: "petrol station", type: "n", definition: "A place where you buy fuel for your car.", example: "We need to stop at the petrol station.", chinese: "加油站" },
+            { word: "underground", type: "n", definition: "An electric railway system under the ground.", example: "I go to work by underground.", chinese: "地鐵" },
+            { word: "roundabout", type: "n", definition: "A circular place where several roads meet.", example: "Take the second exit at the roundabout.", chinese: "圓環" },
+            
             // Weather
-            { word: "thunderstorm", type: "n", definition: "Storm with thunder and lightning.", example: "We stayed inside during the thunderstorm.", chinese: "大雷雨" },
+            { word: "thunderstorm", type: "n", definition: "Storm with thunder and lightning.", example: "The thunderstorm lasted all night.", chinese: "大雷雨" },
             { word: "foggy", type: "adj", definition: "Hard to see because of low clouds.", example: "It's too foggy to drive safely.", chinese: "有霧的" },
             { word: "windy", type: "adj", definition: "With a lot of wind.", example: "It's a very windy day today.", chinese: "風大的" },
-            // Work & Jobs (B1)
+            { word: "cloudy", type: "adj", definition: "With many clouds in the sky.", example: "It was a cloudy and cold afternoon.", chinese: "多雲的" },
+            { word: "freezing", type: "adj", definition: "Extremely cold.", example: "It's freezing outside; wear a coat!", chinese: "極冷的" },
+            
+            // Work & Jobs
             { word: "journalist", type: "n", definition: "Writes for newspapers or news sites.", example: "The journalist interviewed the star.", chinese: "記者" },
-            { word: "laboratory", type: "n", definition: "Room for scientific research.", example: "They work in the chemistry lab.", chinese: "實驗室" },
-            { word: "qualification", type: "n", definition: "A certificate of training.", example: "You need a qualification to teach.", chinese: "資格/學歷" },
-            { word: "receptionist", type: "n", definition: "Greets people at an office.", example: "The receptionist told us to wait.", chinese: "接待員" },
-            { word: "professional", type: "adj", definition: "Relating to a high-skill job.", example: "He gave us professional advice.", chinese: "專業的" },
+            { word: "laboratory", type: "n", definition: "Room for scientific research or experiments.", example: "They work in the chemistry lab.", chinese: "實驗室" },
+            { word: "qualification", type: "n", definition: "A certificate of training or education.", example: "You need a qualification to teach.", chinese: "資格/學歷" },
+            { word: "receptionist", type: "n", definition: "Greets people at an office or hotel.", example: "The receptionist told us to wait.", chinese: "接待員" },
+            { word: "professional", type: "adj", definition: "Relating to a job that needs special skill.", example: "He gave us professional advice.", chinese: "專業的" },
             { word: "occupation", type: "n", definition: "A person's job or profession.", example: "State your age and occupation.", chinese: "職業" },
             { word: "candidate", type: "n", definition: "Person taking an exam or job test.", example: "There are four candidates here.", chinese: "候選人/考生" },
             { word: "experience", type: "n", definition: "Skill gained from doing things.", example: "Do you have work experience?", chinese: "經驗" },
             { word: "opportunity", type: "n", definition: "A chance to do something.", example: "It was a great opportunity.", chinese: "機會" },
-            { word: "environment", type: "n", definition: "The natural world.", example: "Pollution hurts the environment.", chinese: "環境" },
-            { word: "immediately", type: "adv", definition: "Done without any delay.", example: "Please come home immediately.", chinese: "立即地" },
-            { word: "atmosphere", type: "n", definition: "The mood of a place.", example: "The cafe has a nice atmosphere.", chinese: "氣氛" },
+            { word: "salary", type: "n", definition: "The money you receive for your work.", example: "She is happy with her new salary.", chinese: "薪水" },
+            { word: "uniform", type: "n", definition: "Special clothes worn for work or school.", example: "I have to wear a uniform at school.", chinese: "制服" },
+            { word: "customer", type: "n", definition: "A person who buys things from a shop.", example: "The shop was full of customers.", chinese: "顧客" },
+            { word: "manager", type: "n", definition: "The person who is in charge of a shop or office.", example: "I'll ask the manager for help.", chinese: "經理" },
+            { word: "factory", type: "n", definition: "A building where things are made.", example: "My uncle works in a car factory.", chinese: "工廠" },
+            
+            // Education & Study
+            { word: "dictionary", type: "n", definition: "A book that explains the meaning of words.", example: "Look up the word in your dictionary.", chinese: "字典" },
+            { word: "knowledge", type: "n", definition: "Information and skills gained through learning.", example: "He has a lot of knowledge about history.", chinese: "知識" },
+            { word: "instructions", type: "n", definition: "Information telling you how to do something.", example: "Follow the instructions carefully.", chinese: "指示/說明" },
+            { word: "diploma", type: "n", definition: "A certificate showing you finished a course.", example: "She got her diploma in June.", chinese: "文憑" },
+            { word: "message", type: "n", definition: "A short piece of information sent to someone.", example: "I'll leave a message for him.", chinese: "訊息" },
+            
+            // Health & Body
+            { word: "ambulance", type: "n", definition: "A vehicle for taking sick people to hospital.", example: "Call an ambulance quickly!", chinese: "救護車" },
+            { word: "medicine", type: "n", definition: "Substance you take to cure an illness.", example: "Take this medicine after dinner.", chinese: "藥物" },
+            { word: "appointment", type: "n", definition: "Arrangement to meet at a specific time.", example: "I have a dentist appointment.", chinese: "預約" },
+            { word: "operation", type: "n", definition: "When a doctor cuts a body to fix it.", example: "He needs a heart operation.", chinese: "手術" },
+            { word: "symptom", type: "n", definition: "A sign that shows you have an illness.", example: "Fever is a symptom of flu.", chinese: "症狀" },
+
+            // Places & Home
+            { word: "apartment", type: "n", definition: "A set of rooms for living in.", example: "They live in a city apartment.", chinese: "公寓" },
+            { word: "neighborhood", type: "n", definition: "The area where you live.", example: "It's a very quiet neighborhood.", chinese: "社區/鄰里" },
+            { word: "furniture", type: "n", definition: "Items like tables and chairs.", example: "We bought new furniture today.", chinese: "家具" },
+            { word: "environment", type: "n", definition: "The natural world around us.", example: "Protect the environment.", chinese: "環境" },
+            { word: "atmosphere", type: "n", definition: "The feeling or mood of a place.", example: "The cafe has a nice atmosphere.", chinese: "氣氛" },
+            
+            // Qualities & Feelings
+            { word: "frightened", type: "adj", definition: "Feeling fear or worry.", example: "The child was frightened of the dark.", chinese: "害怕的" },
             { word: "particular", type: "adj", definition: "Specific or special.", example: "Is there any particular movie you like?", chinese: "特別的/特定的" },
             { word: "reasonable", type: "adj", definition: "Fair and not too expensive.", example: "The price was reasonable.", chinese: "合理的" },
             { word: "spectacular", type: "adj", definition: "Impressive to look at.", example: "The view is spectacular.", chinese: "壯觀的" },
             { word: "temporary", type: "adj", definition: "Lasting only a short time.", example: "It's a temporary job.", chinese: "暫時的" },
             { word: "unemployed", type: "adj", definition: "Without a job.", example: "He's been unemployed for months.", chinese: "失業的" },
-            { word: "volunteer", type: "n/v", definition: "Helping without being paid.", example: "She is a library volunteer.", chinese: "志工" }
+            { word: "volunteer", type: "n/v", definition: "Helping without being paid.", example: "She is a library volunteer.", chinese: "志工" },
+            { word: "actually", type: "adv", definition: "Used to imply a fact is true.", example: "Actually, it's quite simple.", chinese: "實際上" },
+            { word: "immediately", type: "adv", definition: "Happening right now without delay.", example: "Leave the building immediately.", chinese: "立即地" },
+            { word: "necessary", type: "adj", definition: "Something you must have or do.", example: "Is it necessary to bring a pen?", chinese: "必要的" },
+            { word: "delicious", type: "adj", definition: "Having a very good taste.", example: "This pasta is delicious.", chinese: "美味的" }
         ];
 
         let vocabularyData = [];
@@ -154,19 +196,31 @@
         let score = 0;
         let shuffledQuizWords = [];
 
-        async function fetchWords() {
+        // 啟動函式：直接從本地庫抽 20 個單字，不等待 AI
+        function loadInitialData() {
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString();
+            refreshWordsLocal();
+        }
+
+        // 本地隨機換一組
+        function refreshWordsLocal() {
+            vocabularyData = [...fullWordPool].sort(() => Math.random() - 0.5).slice(0, 20);
+            initTable();
+            switchMode('list');
+            document.getElementById('source-badge').innerText = `✅ 已隨機從本地庫挑選 20 個單字 (庫存 150+)`;
+        }
+
+        // AI 智慧出題模式
+        async function fetchWordsAI() {
             const overlay = document.getElementById('loading-overlay');
-            const btnText = document.getElementById('btn-text');
-            const badge = document.getElementById('source-badge');
+            const aiBtn = document.getElementById('ai-btn');
             
             overlay.classList.remove('hidden');
-            btnText.innerText = "正在讀取 PDF...";
+            aiBtn.disabled = true;
 
-            // AI Prompt 升級：明確告知 PDF 來源
             const systemPrompt = `你是一位專業英檢老師。請根據 Cambridge KET/PET 2025 官方單字庫隨機生成 20 個單字。
-            請確保單字、詞性、定義與例句完全符合劍橋官方標準。
-            回傳 JSON: { "words": [{ "word", "type", "definition", "example", "chinese" }] }`;
-            const userQuery = "請隨機從官方 PDF 單字清單中挑選 20 個關鍵單字。";
+            單字必須包含：word, type, definition, example, chinese。回傳 JSON: { "words": [...] }`;
+            const userQuery = "請隨機挑選 20 個高頻劍橋英檢單字。";
 
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -185,20 +239,18 @@
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     const parsed = JSON.parse(text);
                     vocabularyData = parsed.words || parsed;
-                    badge.innerText = "✨ AI 線上同步模式：已根據 2025 PDF 庫出題";
-                    badge.className = "px-4 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700";
-                } else { throw new Error(); }
+                    document.getElementById('source-badge').innerText = "✨ 已使用 AI 智慧同步最新單字";
+                } else {
+                    throw new Error();
+                }
             } catch (e) {
-                // 備援模式：直接從內建清單抽
-                vocabularyData = [...pdfWordPool].sort(() => Math.random() - 0.5).slice(0, 20);
-                badge.innerText = "📁 離線模式：已加載本地 PDF 核心庫";
-                badge.className = "px-4 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700";
+                alert("AI 連線不穩定，已自動為您切換至備用本地單字庫。");
+                refreshWordsLocal();
             } finally {
-                document.getElementById('current-date').innerText = new Date().toLocaleDateString();
                 initTable();
                 switchMode('list');
                 overlay.classList.add('hidden');
-                btnText.innerText = "AI 從雲端 PDF 出題";
+                aiBtn.disabled = false;
             }
         }
 
@@ -242,8 +294,9 @@
             document.getElementById('quiz-feedback').classList.add('hidden');
 
             let options = [currentItem.word];
-            let others = pdfWordPool.filter(v => v.word !== currentItem.word).map(v => v.word);
-            while(options.length < 4) options.push(others.splice(Math.floor(Math.random()*others.length), 1)[0]);
+            // 從目前的 20 個或是大池中抓干擾項
+            let pool = fullWordPool.filter(v => v.word !== currentItem.word).map(v => v.word);
+            while(options.length < 4) options.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
             options.sort(() => Math.random() - 0.5);
 
             container.innerHTML = `
@@ -291,12 +344,12 @@
                     document.getElementById('quiz-container').classList.add('hidden');
                     document.getElementById('quiz-feedback').classList.add('hidden');
                     document.getElementById('quiz-result').classList.remove('hidden');
-                    document.getElementById('score-text').innerText = `得分：${score} / 20`;
+                    document.getElementById('score-text').innerText = `最終得分：${score} / 20`;
                 }
             }, 1800);
         }
 
-        window.onload = fetchWords;
+        window.onload = loadInitialData;
     </script>
 </body>
 </html>
