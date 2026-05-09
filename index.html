@@ -1,104 +1,749 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Secret State Banquet</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Afacad+Flux:wght@400;600&display=swap" rel="stylesheet">
+    <title>劍橋英檢 1000 單字版次管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { background-color: #f0f2f5; margin: 0; padding: 20px 0; display: grid; gap: 25px; place-items: center; min-height: 100vh; font-family: 'Afacad Flux', sans-serif; }
-        .slide { width: 1000px; height: 600px; background: white; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); overflow: hidden; display: flex; position: relative; border: 8px solid #fff; }
-        
-        .image-side { width: 50%; height: 100%; position: relative; overflow: hidden; }
-        .image-side img { width: 100%; height: 100%; object-fit: cover; }
-        .text-side { width: 50%; padding: 40px; display: flex; flex-direction: column; justify-content: center; background-color: #fffaf0; }
-        
-        .page-num { position: absolute; top: 20px; right: 20px; background: #ff7675; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
-        h2 { font-family: 'Comfortaa', cursive; color: #2d3436; font-size: 36px; margin-bottom: 20px; border-left: 8px solid #fab1a0; padding-left: 15px; }
-        p { font-size: 22px; line-height: 1.5; color: #2d3436; }
-        
-        /* Vocabulary Highlight */
-        .v { color: #e17055; font-weight: 700; background-color: #ffeaa7; padding: 2px 6px; border-radius: 6px; border-bottom: 3px solid #fdcb6e; }
-        
-        .cover { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; justify-content: center; align-items: center; text-align: center; flex-direction: column; }
-        .cover h1 { font-size: 60px; margin: 0; font-family: 'Comfortaa'; }
-        .footer { width: 1000px; background: #2d3436; color: white; padding: 20px; border-radius: 15px; text-align: center; font-size: 18px; }
+        @media print {
+            .no-print { display: none !important; }
+            #list-mode { display: block !important; }
+            body { background: white; padding: 0; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000 !important; padding: 6px !important; }
+            .container { width: 100% !important; max-width: none !important; padding: 0 !important; }
+        }
+        .correct { background-color: #d1fae5 !important; color: #065f46; border-color: #10b981 !important; }
+        .wrong { background-color: #fee2e2 !important; color: #991b1b; border-color: #ef4444 !important; }
+        .btn-active { background-color: #4f46e5 !important; color: white !important; }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen font-sans">
 
-<!-- Slide 0: Cover -->
-<div class="slide cover">
-    <h1>The Secret State Banquet</h1>
-    <p style="color: #dfe6e9; font-size: 28px;">A Global Vocabulary Adventure</p>
-    <div style="font-size: 80px; margin-top: 20px;">🎖️🎻🥧</div>
-</div>
+    <!-- 頂部導航 -->
+    <nav class="bg-indigo-900 text-white p-4 shadow-xl no-print sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold flex items-center"><span class="mr-2">📝</span>Cambridge 1000 Vocab</h1>
+                <p class="text-[10px] text-indigo-300">總體進度: <span id="progress-text">0 / 1000</span></p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="switchMode('list')" id="nav-list" class="px-4 py-2 rounded-lg text-sm bg-indigo-800 hover:bg-indigo-700 transition btn-active">單字清單</button>
+                <button onclick="switchMode('quiz')" id="nav-quiz" class="px-4 py-2 rounded-lg text-sm bg-indigo-800 hover:bg-indigo-700 transition">互動測驗</button>
+                <button onclick="generateNextBatch()" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition">生成下一版 (不重複)</button>
+                <button onclick="window.print()" class="bg-white text-indigo-900 px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-100 transition">列印 PDF</button>
+                <button onclick="resetAllProgress()" class="text-red-300 hover:text-red-100 px-2 py-2 text-[10px] underline">重置所有進度</button>
+            </div>
+        </div>
+    </nav>
 
-<!-- Slide 1: Departure -->
-<div class="slide">
-    <div class="image-side">
-        <img src="https://img.freepik.com/free-photo/travel-concept-with-baggage_23-2149153260.jpg" alt="Airport Departure">
-    </div>
-    <div class="text-side">
-        <div class="page-num">01</div>
-        <h2>The Big Day</h2>
-        <p>Ben is a government <span class="v">representative</span>. Today is the day of his <span class="v">departure</span> to a <span class="v">foreign</span> country. He didn't <span class="v">hesitate</span> to pack his bags and start this long <span class="v">journey</span>.</p>
-    </div>
-</div>
+    <div class="container mx-auto p-4 md:p-6">
+        <!-- 當前版次資訊 -->
+        <div class="mb-6 bg-white p-5 rounded-2xl border-l-8 border-indigo-600 shadow-md flex justify-between items-center">
+            <div>
+                <span class="text-indigo-400 text-[10px] uppercase font-black tracking-widest">Cambridge Official List 2025</span>
+                <h2 class="text-2xl font-black text-slate-800" id="version-display">Batch #1</h2>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-slate-400 font-bold" id="batch-count-info">本版包含 20 個單字</div>
+                <div class="text-[10px] text-slate-300" id="remaining-count">剩餘未學: 980</div>
+            </div>
+        </div>
 
-<!-- Slide 2: Arrival at Capital -->
-<div class="slide">
-    <div class="image-side">
-        <img src="https://img.freepik.com/free-photo/city-skyline-with-modern-buildings_23-2149153279.jpg" alt="Capital City">
-    </div>
-    <div class="text-side">
-        <div class="page-num">02</div>
-        <h2>In the Capital</h2>
-        <p>He arrived at the <span class="v">capital</span> city. At the hotel, the <span class="v">receptionist</span> was very polite. She asked about his <span class="v">identity</span> and checked his <span class="v">official</span> papers to make sure everything was correct.</p>
-    </div>
-</div>
+        <!-- 單字清單模式 -->
+        <div id="list-mode" class="block animate-in fade-in duration-500">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-tighter">
+                            <th class="py-4 px-6 border-b w-1/4">Vocabulary / Chinese</th>
+                            <th class="py-4 px-2 border-b w-16 text-center">Type</th>
+                            <th class="py-4 px-6 border-b">Definition & Example Sentence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vocab-table-body" class="text-slate-700 text-sm">
+                        <!-- JS 動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-<!-- Slide 3: Preparation & Quality -->
-<div class="slide">
-    <div class="image-side">
-        <img src="https://img.freepik.com/free-photo/chef-preparing-delicious-food_23-2149153285.jpg" alt="Chef and Kitchen">
+        <!-- 測驗模式 -->
+        <div id="quiz-mode" class="hidden no-print">
+            <div class="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-black text-slate-800">版次測驗：<span id="quiz-version-text" class="text-indigo-600">#1</span></h2>
+                    <div class="flex items-center gap-2">
+                        <span id="quiz-progress" class="bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-black">1 / 20</span>
+                    </div>
+                </div>
+                <div id="quiz-container" class="min-h-[300px]"></div>
+                <div id="quiz-feedback" class="hidden mt-6 p-4 rounded-2xl text-center font-bold text-lg transition-all duration-300"></div>
+                
+                <div id="quiz-result" class="hidden mt-10 p-10 bg-indigo-50 rounded-3xl text-center border-2 border-dashed border-indigo-200">
+                    <div class="text-7xl mb-6">🏆</div>
+                    <h3 class="text-3xl font-black text-indigo-900 mb-2">太棒了！</h3>
+                    <p id="score-text" class="text-2xl text-indigo-600 mb-8 font-bold">得分：0 / 20</p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="resetQuiz()" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl hover:bg-indigo-700 transition font-bold shadow-xl">重新挑戰本版</button>
+                        <button onclick="generateNextBatch()" class="bg-emerald-500 text-white px-10 py-4 rounded-2xl hover:bg-emerald-600 transition font-bold shadow-xl">進入下一版單字</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="text-side">
-        <div class="page-num">03</div>
-        <h2>Busy Kitchen</h2>
-        <p>In the kitchen, the <span class="v">preparation</span> for the banquet was crazy! The chef used high <span class="v">quality</span> <span class="v">equipment</span> to cook. He wanted to show that his food was much better than the <span class="v">average</span> meal.</p>
-    </div>
-</div>
 
-<!-- Slide 4: Meeting the Musician -->
-<div class="slide">
-    <div class="image-side">
-        <img src="https://img.freepik.com/free-photo/musician-playing-violin_23-2149153291.jpg" alt="Violin Musician">
-    </div>
-    <div class="text-side">
-        <div class="page-num">04</div>
-        <h2>The Music Mistake</h2>
-        <p>Ben’s friend, a talented <span class="v">musician</span>, was worried. "My English <span class="v">grammar</span> is bad!" he said. But Ben told him, "Don't worry! Music is like a <span class="v">religion</span> here; everyone loves it. You are making great <span class="v">progress</span>!"</p>
-    </div>
-</div>
+    <script>
+        /**
+         * 1000 單字資料庫 (整合 KET/PET 官方清單)
+         * 格式: [單字, 詞性, 定義, 例句, 中文]
+         */
+        const rawVocabData = [
+            ["accommodation", "n", "A place to live, work or stay in.", "There's no student accommodation available.", "住宿"],
+            ["actually", "adv", "In fact or really.", "Actually, I like it.", "實際上"],
+            ["advertise", "v", "To describe a product to make people buy it.", "Advertise the new car on TV.", "打廣告"],
+            ["ambulance", "n", "A vehicle that takes sick people to hospital.", "The ambulance arrived quickly.", "救護車"],
+            ["appointment", "n", "An arrangement to meet someone at a time.", "I have a doctor's appointment.", "預約"],
+            ["appreciate", "v", "To recognize the value of something.", "I appreciate your hard work.", "感激/欣賞"],
+            ["artificial", "adj", "Made by people, not natural.", "Artificial flowers look real.", "人造的"],
+            ["assistant", "n", "Someone whose job is to help a person.", "The shop assistant was helpful.", "助理/店員"],
+            ["atmosphere", "n", "The feeling or mood of a place.", "The hotel has a nice atmosphere.", "氣氛"],
+            ["available", "adj", "Able to be used or bought.", "Is the room available tonight?", "可用的"],
+            ["average", "adj", "A standard or normal amount.", "He is of average height.", "平均的"],
+            ["bargain", "n", "Something on sale at a lower price.", "This shirt is a real bargain.", "便宜貨"],
+            ["beautiful", "adj", "Very attractive to look at.", "What a beautiful garden!", "美麗的"],
+            ["behavior", "n", "The way that someone acts.", "Good behavior is expected.", "行為"],
+            ["brilliant", "adj", "Very smart or impressive.", "That's a brilliant idea!", "傑出的/聰明的"],
+            ["brochure", "n", "A small book with information.", "I read the travel brochure.", "小冊子"],
+            ["calendar", "n", "A chart showing the days and months.", "Check the date on the calendar.", "日曆"],
+            ["candidate", "n", "A person taking an exam or job test.", "There are four candidates.", "候選人/考生"],
+            ["category", "n", "A group of things with similar qualities.", "Choose a category.", "種類"],
+            ["celebrity", "n", "A famous person.", "She became a global celebrity.", "名人"],
+            ["century", "n", "A period of 100 years.", "In the 21st century.", "世紀"],
+            ["challenge", "n", "A difficult task that tests ability.", "It was a big challenge.", "挑戰"],
+            ["character", "n", "The personality of a person.", "He has a strong character.", "性格/角色"],
+            ["charity", "n", "An organization that helps the needy.", "Give money to charity.", "慈善機構"],
+            ["comfortable", "adj", "Providing physical ease.", "This chair is very comfortable.", "舒適的"],
+            ["communicate", "v", "To share information with others.", "We communicate by email.", "溝通"],
+            ["competition", "n", "An organized event to find a winner.", "Win the swimming competition.", "比賽"],
+            ["confident", "adj", "Being sure of your own ability.", "Be confident in yourself.", "自信的"],
+            ["convenient", "adj", "Suitable or easy to reach.", "The location is convenient.", "方便的"],
+            ["dangerous", "adj", "Likely to cause harm or injury.", "Fire is dangerous.", "危險的"],
+            ["deadline", "n", "A time by which something must be done.", "Meet the deadline.", "截止日期"],
+            ["delicious", "adj", "Having a very good taste.", "This pizza is delicious.", "美味的"],
+            ["departure", "n", "The act of leaving a place.", "Check the departure time.", "出發"],
+            ["destination", "n", "The place where someone is going.", "Paris is our destination.", "目的地"],
+            ["dictionary", "n", "A book that explains words.", "Look it up in the dictionary.", "字典"],
+            ["difficult", "adj", "Needing a lot of effort to do.", "The test was difficult.", "困難的"],
+            ["disappointed", "adj", "Sad because something failed.", "I'm disappointed with the result.", "失望的"],
+            ["education", "n", "The process of learning in school.", "Get a good education.", "教育"],
+            ["efficient", "adj", "Working well without wasting time.", "An efficient worker.", "有效率的"],
+            ["emergency", "n", "A serious unexpected situation.", "In case of emergency.", "緊急情況"],
+            ["environment", "n", "The natural world around us.", "Protect the environment.", "環境"],
+            ["equipment", "n", "Tools or machines for a purpose.", "Sports equipment.", "裝備"],
+            ["experience", "n", "Knowledge gained from doing things.", "I have work experience.", "經驗"],
+            ["experiment", "n", "A scientific test.", "Do a science experiment.", "實驗"],
+            ["explain", "v", "To make something clear to others.", "Explain the rules.", "解釋"],
+            ["extraordinary", "adj", "Very special or unusual.", "An extraordinary story.", "非凡的"],
+            ["facility", "n", "A place or tool for an activity.", "Gym facilities.", "設施"],
+            ["factory", "n", "A building where things are made.", "A car factory.", "工廠"],
+            ["familiar", "adj", "Well known to you.", "That face looks familiar.", "熟悉的"],
+            ["famous", "adj", "Known by many people.", "A famous singer.", "著名的"],
+            ["frightened", "adj", "Feeling fear or worry.", "I'm frightened of snakes.", "害怕的"],
+            ["furniture", "n", "Items like tables and chairs.", "Buy new furniture.", "家具"],
+            ["generation", "n", "People born at about the same time.", "The next generation.", "世代"],
+            ["generous", "adj", "Giving more than expected.", "A generous man.", "慷慨的"],
+            ["genuine", "adj", "Real and not fake.", "Genuine leather.", "真正的"],
+            ["guarantee", "n", "A formal promise.", "Money-back guarantee.", "保證"],
+            ["immediately", "adv", "Happening right now.", "Come home immediately.", "立即地"],
+            ["impossible", "adj", "Something that cannot happen.", "It's impossible to fly.", "不可能的"],
+            ["independent", "adj", "Free from outside control.", "An independent life.", "獨立的"],
+            ["information", "n", "Facts about someone or something.", "Need more information.", "資訊"],
+            ["intelligent", "adj", "Able to learn things quickly.", "An intelligent boy.", "聰明的"],
+            ["interview", "n", "A meeting to ask questions.", "Job interview.", "面試"],
+            ["invitation", "n", "A request to come to an event.", "Party invitation.", "邀請"],
+            ["journey", "n", "The act of traveling.", "Have a safe journey.", "旅程"],
+            ["knowledge", "n", "Information gained by study.", "Basic knowledge.", "知識"],
+            ["laboratory", "n", "A room for scientific work.", "Chemistry lab.", "實驗室"],
+            ["literature", "n", "Written works like novels.", "Study English literature.", "文學"],
+            ["magnificent", "adj", "Very impressive or beautiful.", "A magnificent view.", "壯麗的"],
+            ["mechanic", "n", "Someone who repairs engines.", "The mechanic fixed my car.", "技工"],
+            ["medicine", "n", "Something you take to cure illness.", "Take your medicine.", "藥物"],
+            ["neighborhood", "n", "The area near where you live.", "A quiet neighborhood.", "社區/鄰里"],
+            ["occupation", "n", "A person's job or profession.", "What's your occupation?", "職業"],
+            ["opportunity", "n", "A good chance to do something.", "A great opportunity.", "機會"],
+            ["particular", "adj", "Specific or special.", "A particular reason.", "特定的"],
+            ["passenger", "n", "Someone traveling in a vehicle.", "Bus passenger.", "乘客"],
+            ["professional", "adj", "Relating to a high-skill job.", "Professional work.", "專業的"],
+            ["qualification", "n", "A certificate of education.", "Teaching qualification.", "資格"],
+            ["reasonable", "adj", "Fair and not too expensive.", "The price is reasonable.", "合理的"],
+            ["receptionist", "n", "Someone who greets visitors.", "Ask the receptionist.", "接待員"],
+            ["reservation", "n", "Booking something for later.", "Hotel reservation.", "預訂"],
+            ["spectacular", "adj", "Very exciting to look at.", "A spectacular show.", "壯觀的"],
+            ["temporary", "adj", "Lasting for a short time.", "A temporary job.", "暫時的"],
+            ["thunderstorm", "n", "Storm with lightning.", "Loud thunderstorm.", "雷雨"],
+            ["uniform", "n", "Standard clothes for work.", "School uniform.", "制服"],
+            ["volunteer", "n", "Someone helping for free.", "Charity volunteer.", "志工"],
+            ["wonderful", "adj", "Extremely good.", "A wonderful day.", "美妙的"],
+            ["yesterday", "n", "The day before today.", "I saw him yesterday.", "昨天"],
+            ["accident", "n", "Unexpected unfortunate event.", "A car accident.", "意外"],
+            ["achieve", "v", "To finish something successfully.", "Achieve your goals.", "達成"],
+            ["admission", "n", "The cost of entering a place.", "Museum admission.", "門票/允許進入"],
+            ["advanced", "adj", "At a high level.", "Advanced English.", "進階的"],
+            ["advantage", "n", "Something that helps you succeed.", "A big advantage.", "優點"],
+            ["advertise", "v", "To promote a product.", "Advertise online.", "廣告"],
+            ["affordable", "adj", "Not too expensive.", "Affordable prices.", "負擔得起的"],
+            ["anniversary", "n", "Yearly celebration of a date.", "Wedding anniversary.", "週年紀念"],
+            ["anxious", "adj", "Feeling worried or nervous.", "He felt anxious.", "焦慮的"],
+            ["appearance", "n", "The way someone looks.", "Improve your appearance.", "外表"],
+            ["appreciate", "v", "To be grateful for.", "I appreciate it.", "感激"],
+            ["artificial", "adj", "Not natural.", "Artificial light.", "人造的"],
+            ["assignment", "n", "A piece of work to do.", "School assignment.", "作業"],
+            ["audience", "n", "People watching a show.", "The audience clapped.", "觀眾"],
+            ["authority", "n", "The power to give orders.", "Police authority.", "權威/當局"],
+            ["background", "n", "Your experience or origins.", "Family background.", "背景"],
+            ["baggage", "n", "Traveling cases and bags.", "Check your baggage.", "行李"],
+            ["balance", "n", "Weight shared equally.", "Keep your balance.", "平衡"],
+            ["benefit", "n", "A helpful result.", "Health benefits.", "好處"],
+            ["bicycle", "n", "A vehicle with two wheels.", "Ride a bicycle.", "腳踏車"],
+            ["biology", "n", "The study of living things.", "Biology class.", "生物學"],
+            ["borrow", "v", "To take and return later.", "Borrow a book.", "借入"],
+            ["broadcast", "n", "A TV or radio program.", "Live broadcast.", "廣播"],
+            ["building", "n", "A structure with walls.", "Tall building.", "建築物"],
+            ["business", "n", "Buying and selling goods.", "Start a business.", "生意"],
+            ["capital", "n", "The main city of a country.", "London is the capital.", "首都"],
+            ["ceremony", "n", "A formal public event.", "Opening ceremony.", "儀式"],
+            ["character", "n", "Person in a story.", "Lead character.", "角色"],
+            ["checkout", "n", "Where you pay in a shop.", "Supermarket checkout.", "結帳台"],
+            ["cheerful", "adj", "Happy and positive.", "A cheerful person.", "快樂的"],
+            ["climate", "n", "General weather patterns.", "Tropical climate.", "氣候"],
+            ["colleague", "n", "Someone you work with.", "Meet my colleague.", "同事"],
+            ["collection", "n", "A group of items.", "Stamp collection.", "收藏"],
+            ["community", "n", "People living in one area.", "Local community.", "社區"],
+            ["competition", "n", "A race or contest.", "Swim competition.", "比賽"],
+            ["complex", "adj", "Not simple.", "A complex problem.", "複雜的"],
+            ["compound", "n", "Mixture of elements.", "Chemical compound.", "化合物"],
+            ["computer", "n", "Electronic machine.", "Use a computer.", "電腦"],
+            ["concentrate", "v", "To give full attention.", "Concentrate on study.", "專注"],
+            ["conclusion", "n", "The final part or decision.", "In conclusion.", "結論"],
+            ["conference", "n", "A formal meeting.", "Business conference.", "會議"],
+            ["confirm", "v", "To check as true.", "Confirm the date.", "確認"],
+            ["connection", "n", "Relationship between things.", "Internet connection.", "連接"],
+            ["conscious", "adj", "Aware of surroundings.", "Be conscious of.", "有意識的"],
+            ["consider", "v", "To think carefully.", "Consider the offer.", "考慮"],
+            ["construction", "n", "Building things.", "Road construction.", "建設"],
+            ["contact", "v", "To communicate with.", "Contact us.", "聯絡"],
+            ["continue", "v", "To keep doing.", "Continue reading.", "繼續"],
+            ["contract", "n", "Legal agreement.", "Sign the contract.", "合約"],
+            ["convenient", "adj", "Useful and easy.", "Convenient time.", "方便的"],
+            ["conversation", "n", "Talking to someone.", "Phone conversation.", "對話"],
+            ["courage", "n", "Being brave.", "Have courage.", "勇氣"],
+            ["creature", "n", "Living animal.", "Sea creature.", "生物"],
+            ["criticism", "n", "Saying what is wrong.", "Constructive criticism.", "批評"],
+            ["cultural", "adj", "Relating to culture.", "Cultural event.", "文化的"],
+            ["curiosity", "n", "Desire to know.", "Fill with curiosity.", "好奇心"],
+            ["customer", "n", "Person buying things.", "Happy customer.", "顧客"],
+            ["dangerous", "adj", "Not safe.", "Dangerous animal.", "危險的"],
+            ["daughter", "n", "A female child.", "My daughter.", "女兒"],
+            ["decision", "n", "A choice you make.", "Make a decision.", "決定"],
+            ["decrease", "v", "To become smaller.", "Decrease the volume.", "減少"],
+            ["delivery", "n", "Bringing goods.", "Home delivery.", "遞送"],
+            ["departure", "n", "Leaving a place.", "Flight departure.", "出發"],
+            ["description", "n", "Describing something.", "Detailed description.", "描述"],
+            ["desert", "n", "Dry sandy land.", "Sahara desert.", "沙漠"],
+            ["design", "v", "To plan or draw.", "Design a website.", "設計"],
+            ["development", "n", "Growth or change.", "City development.", "發展"],
+            ["difference", "n", "How things are not same.", "Spot the difference.", "差異"],
+            ["difficulty", "n", "Being hard to do.", "Have difficulty.", "困難"],
+            ["direction", "n", "Where to go.", "Which direction?", "方向"],
+            ["disaster", "n", "A terrible event.", "Natural disaster.", "災難"],
+            ["discovery", "n", "Finding first time.", "Scientific discovery.", "發現"],
+            ["discussion", "n", "Talking about topic.", "Group discussion.", "討論"],
+            ["disease", "n", "Serious illness.", "Prevent disease.", "疾病"],
+            ["distance", "n", "Space between points.", "Long distance.", "距離"],
+            ["document", "n", "Official paper.", "Sign the document.", "文件"],
+            ["domestic", "adj", "Related to home.", "Domestic flight.", "國內的/家庭的"],
+            ["download", "v", "Get data from net.", "Download music.", "下載"],
+            ["earthquake", "n", "Shaking of ground.", "Big earthquake.", "地震"],
+            ["economics", "n", "Study of money.", "Economics degree.", "經濟學"],
+            ["efficient", "adj", "Fast and good.", "Efficient car.", "有效率的"],
+            ["electricity", "n", "Power for lights.", "Save electricity.", "電力"],
+            ["elevator", "n", "Lift for people.", "Take the elevator.", "電梯"],
+            ["emergency", "n", "Urgent situation.", "Emergency exit.", "緊急情況"],
+            ["employee", "n", "Worker for company.", "New employee.", "員工"],
+            ["employment", "n", "Having a job.", "Find employment.", "雇用/就業"],
+            ["entertainment", "n", "Fun shows.", "TV entertainment.", "娛樂"],
+            ["environment", "n", "Nature around us.", "Clean environment.", "環境"],
+            ["equipment", "n", "Tools for work.", "Office equipment.", "設備"],
+            ["essential", "adj", "Very necessary.", "Water is essential.", "必要的"],
+            ["estimate", "n", "Rough guess.", "Cost estimate.", "估計"],
+            ["excellent", "adj", "Very good.", "Excellent work.", "優秀的"],
+            ["exhibition", "n", "Art display.", "Art exhibition.", "展覽"],
+            ["expectation", "n", "What you hope for.", "High expectation.", "期望"],
+            ["experience", "n", "Doing things.", "Work experience.", "經驗"],
+            ["experiment", "n", "Science test.", "Lab experiment.", "實驗"],
+            ["explanation", "n", "Making clear.", "Full explanation.", "解釋"],
+            ["explore", "v", "Search or travel.", "Explore the city.", "探索"],
+            ["export", "v", "Send out of country.", "Export rice.", "出口"],
+            ["expression", "n", "Showing feeling.", "Facial expression.", "表達/表情"],
+            ["extraordinary", "adj", "Unbelievable.", "Extraordinary man.", "非凡的"],
+            ["facility", "n", "Building or tool.", "Sport facility.", "設施"],
+            ["factory", "n", "Making building.", "Car factory.", "工廠"],
+            ["familiar", "adj", "Known to you.", "Familiar face.", "熟悉的"],
+            ["famous", "adj", "Known by all.", "Famous actor.", "著名的"],
+            ["fantastic", "adj", "Very great.", "Fantastic idea.", "極好的"],
+            ["favorite", "adj", "Like most.", "Favorite color.", "最喜愛的"],
+            ["feather", "n", "Bird skin covering.", "Bird feather.", "羽毛"],
+            ["festival", "n", "Celebration.", "Music festival.", "節慶"],
+            ["firefighter", "n", "Puts out fires.", "Brave firefighter.", "消防員"],
+            ["fitness", "n", "Being healthy.", "Keep fitness.", "體適能"],
+            ["flavor", "n", "Taste of food.", "Chocolate flavor.", "口味"],
+            ["forecast", "n", "Predict future.", "Weather forecast.", "預報"],
+            ["foreign", "adj", "From other country.", "Foreign language.", "外國的"],
+            ["forever", "adv", "For always.", "Stay forever.", "永遠地"],
+            ["fortunately", "adv", "With good luck.", "Fortunately, I'm okay.", "幸運地"],
+            ["foundation", "n", "Basis or base.", "Building foundation.", "基礎/基金會"],
+            ["freedom", "n", "Being free.", "Fight for freedom.", "自由"],
+            ["frightened", "adj", "Afraid.", "Frightened child.", "害怕的"],
+            ["furniture", "n", "Tables and chairs.", "Buy furniture.", "家具"],
+            ["gallery", "n", "Art room.", "Art gallery.", "藝廊"],
+            ["generation", "n", "People same age.", "New generation.", "世代"],
+            ["generous", "adj", "Giving much.", "Generous gift.", "慷慨的"],
+            ["geography", "n", "Study of Earth.", "Geography class.", "地理"],
+            ["government", "n", "Ruling group.", "Local government.", "政府"],
+            ["graduate", "v", "Finish school.", "Graduate college.", "畢業"],
+            ["grammar", "n", "Language rules.", "English grammar.", "語法"],
+            ["grateful", "adj", "Feeling thankful.", "I'm grateful.", "感激的"],
+            ["guarantee", "v", "To promise.", "Guarantee quality.", "保證"],
+            ["gymnastics", "n", "Body sport.", "Do gymnastics.", "體操"],
+            ["happiness", "n", "Feeling happy.", "True happiness.", "快樂"],
+            ["harbor", "n", "Boat shelter.", "Safe harbor.", "港口"],
+            ["hardware", "n", "Computer parts.", "Computer hardware.", "硬體"],
+            ["healthy", "adj", "In good shape.", "Healthy food.", "健康的"],
+            ["helicopter", "n", "Flying vehicle.", "Rescue helicopter.", "直升機"],
+            ["hesitate", "v", "Wait to act.", "Don't hesitate.", "猶豫"],
+            ["highway", "n", "Main road.", "Busy highway.", "公路"],
+            ["history", "n", "Past events.", "Study history.", "歷史"],
+            ["horizontal", "adj", "Level or flat.", "Horizontal line.", "水平的"],
+            ["hospital", "n", "Place for sick.", "General hospital.", "醫院"],
+            ["however", "adv", "But or though.", "I'm tired; however.", "然而"],
+            ["identify", "v", "Find who someone is.", "Identify the man.", "辨認"],
+            ["identity", "n", "Who someone is.", "National identity.", "身份"],
+            ["immediately", "adv", "Right now.", "Come immediately.", "立即地"],
+            ["important", "adj", "Valuable or needed.", "Important news.", "重要的"],
+            ["impossible", "adj", "Cannot be done.", "Nothing is impossible.", "不可能的"],
+            ["improvement", "n", "Becoming better.", "Home improvement.", "進步"],
+            ["including", "prep", "Plus or added.", "Ten including me.", "包括"],
+            ["independent", "adj", "By oneself.", "Independent state.", "獨立的"],
+            ["individual", "n", "One person.", "Single individual.", "個人"],
+            ["industry", "n", "Making things.", "Music industry.", "產業/工業"],
+            ["influence", "n", "Power to change.", "Strong influence.", "影響"],
+            ["information", "n", "Facts shared.", "Get information.", "資訊"],
+            ["ingredient", "n", "Food part.", "Cake ingredient.", "成分/材料"],
+            ["injury", "n", "Physical harm.", "Head injury.", "受傷"],
+            ["innocent", "adj", "Not guilty.", "Innocent child.", "清白的"],
+            ["inspector", "n", "Checker person.", "Ticket inspector.", "檢查員"],
+            ["installation", "n", "Putting in.", "Soft installation.", "安裝"],
+            ["instruction", "n", "Telling how.", "Follow instruction.", "指示"],
+            ["instrument", "n", "Music tool.", "Musical instrument.", "樂器"],
+            ["intelligent", "adj", "Smart.", "Intelligent girl.", "聰明的"],
+            ["intention", "n", "What you mean to do.", "Good intention.", "意圖"],
+            ["international", "adj", "Across nations.", "International flight.", "國際的"],
+            ["internet", "n", "World network.", "Surf the internet.", "網路"],
+            ["interview", "v", "Ask questions.", "Interview the star.", "面試"],
+            ["introduction", "n", "Meeting first.", "Course introduction.", "介紹"],
+            ["invitation", "n", "Asking to come.", "Wedding invitation.", "邀請"],
+            ["island", "n", "Land in water.", "Tropical island.", "島嶼"],
+            ["jacket", "n", "Short coat.", "Blue jacket.", "夾克"],
+            ["jewelry", "n", "Gold and rings.", "Wear jewelry.", "珠寶"],
+            ["journey", "n", "Trip to place.", "Long journey.", "旅程"],
+            ["judgment", "n", "A decision.", "Wait for judgment.", "判斷"],
+            ["justice", "n", "Fair treatment.", "Seek justice.", "正義"],
+            ["knowledge", "n", "What you know.", "Wide knowledge.", "知識"],
+            ["laboratory", "n", "Science room.", "Research lab.", "實驗室"],
+            ["language", "n", "What you speak.", "Native language.", "語言"],
+            ["laugh", "v", "Make happy sound.", "Laugh out loud.", "笑"],
+            ["lawyer", "n", "Legal worker.", "Talk to a lawyer.", "律師"],
+            ["leadership", "n", "Being a leader.", "Strong leadership.", "領導力"],
+            ["lecture", "n", "Long talk.", "History lecture.", "講座"],
+            ["leisure", "n", "Free time.", "Leisure activity.", "休閒"],
+            ["literature", "n", "Books and poems.", "Read literature.", "文學"],
+            ["location", "n", "A place.", "Good location.", "地點"],
+            ["magazine", "n", "Thin news book.", "Fashion magazine.", "雜誌"],
+            ["magnificent", "adj", "Impressive.", "Magnificent house.", "壯麗的"],
+            ["maintenance", "n", "Keeping ready.", "Car maintenance.", "維護"],
+            ["management", "n", "Managing team.", "Hotel management.", "管理"],
+            ["manager", "n", "Person in charge.", "Office manager.", "經理"],
+            ["marketing", "n", "Selling plans.", "Job in marketing.", "行銷"],
+            ["marriage", "n", "State of being wed.", "Happy marriage.", "婚姻"],
+            ["measurement", "n", "Finding size.", "Accurate measurement.", "測量"],
+            ["medicine", "n", "Curing stuff.", "Take medicine.", "藥物"],
+            ["memorial", "n", "Reminder of past.", "War memorial.", "紀念碑"],
+            ["message", "n", "Sent info.", "Leave a message.", "訊息"],
+            ["military", "n", "Armed forces.", "Join military.", "軍事"],
+            ["miserable", "adj", "Very sad.", "Feel miserable.", "痛苦的"],
+            ["mixture", "n", "Mixed stuff.", "Strange mixture.", "混合物"],
+            ["mountain", "n", "High land.", "Climb mountain.", "山"],
+            ["movement", "n", "Act of moving.", "Social movement.", "動作/運動"],
+            ["musician", "n", "Plays music.", "Talented musician.", "音樂家"],
+            ["mystery", "n", "Unsolved secret.", "Solve mystery.", "謎"],
+            ["national", "adj", "Of the nation.", "National park.", "國家的"],
+            ["natural", "adj", "From nature.", "Natural beauty.", "自然的"],
+            ["necessary", "adj", "Needed.", "It's necessary.", "必要的"],
+            ["neighborhood", "n", "Area near home.", "Safe neighborhood.", "社區"],
+            ["newspaper", "n", "Daily news sheet.", "Read newspaper.", "報紙"],
+            ["northern", "adj", "Of the north.", "Northern light.", "北方的"],
+            ["observation", "n", "Watching carefully.", "Keep observation.", "觀察"],
+            ["obstacle", "n", "Something in way.", "Clear obstacles.", "障礙"],
+            ["occupation", "n", "A job.", "Main occupation.", "職業"],
+            ["ocean", "n", "Large sea.", "Atlantic ocean.", "海洋"],
+            ["official", "adj", "From authority.", "Official report.", "官方的"],
+            ["operation", "n", "Medical surgery.", "Heart operation.", "手術"],
+            ["opportunity", "n", "A chance.", "Job opportunity.", "機會"],
+            ["opposite", "adj", "Different side.", "Opposite street.", "相反的"],
+            ["optimistic", "adj", "Hopeful.", "Be optimistic.", "樂觀的"],
+            ["ordinary", "adj", "Normal.", "Ordinary day.", "平凡的"],
+            ["organization", "n", "A group.", "Big organization.", "組織"],
+            ["original", "adj", "The first.", "Original plan.", "原本的"],
+            ["painter", "n", "Artist who paints.", "House painter.", "畫家"],
+            ["passenger", "n", "Traveler in car.", "Plane passenger.", "乘客"],
+            ["passport", "n", "Travel document.", "Valid passport.", "護照"],
+            ["performance", "n", "Showing skill.", "Great performance.", "表演"],
+            ["permanent", "adj", "Lasting forever.", "Permanent job.", "永久的"],
+            ["permission", "n", "Allowed to do.", "Need permission.", "許可"],
+            ["personal", "adj", "Of yourself.", "Personal life.", "個人的"],
+            ["personality", "n", "Who you are.", "Nice personality.", "個性"],
+            ["pessimistic", "adj", "Negative thinking.", "Don't be pessimistic.", "悲觀的"],
+            ["pharmacy", "n", "Medicine shop.", "Local pharmacy.", "藥局"],
+            ["phenomenon", "n", "Something strange.", "Natural phenomenon.", "現象"],
+            ["photograph", "n", "Camera picture.", "Take photograph.", "照片"],
+            ["physical", "adj", "Of the body.", "Physical health.", "身體的"],
+            ["platform", "n", "Train waiting area.", "Wait on platform.", "月台"],
+            ["pleasant", "adj", "Nice and good.", "Pleasant day.", "令人愉悅的"],
+            ["pollution", "n", "Dirty air/water.", "Air pollution.", "污染"],
+            ["population", "n", "People in area.", "Large population.", "人口"],
+            ["possibility", "n", "A chance.", "No possibility.", "可能性"],
+            ["practical", "adj", "Useful skill.", "Practical help.", "實用的"],
+            ["preparation", "n", "Getting ready.", "Full preparation.", "準備"],
+            ["presence", "n", "Being there.", "Feel presence.", "存在/出席"],
+            ["president", "n", "Nation leader.", "U.S. President.", "總統"],
+            ["pressure", "n", "Physical force.", "Under pressure.", "壓力"],
+            ["primary", "adj", "First or main.", "Primary school.", "首要的/初級的"],
+            ["principle", "n", "Basic rule.", "Basic principle.", "原則"],
+            ["priority", "n", "Most important.", "High priority.", "優先事項"],
+            ["privacy", "n", "Being alone.", "Need privacy.", "隱私"],
+            ["private", "adj", "Not for all.", "Private property.", "私人的"],
+            ["professional", "adj", "Expert job.", "Professional cook.", "專業的"],
+            ["program", "n", "TV show/software.", "TV program.", "節目/程式"],
+            ["progress", "n", "Moving forward.", "Make progress.", "進步"],
+            ["prohibit", "v", "To forbid.", "Smoking prohibited.", "禁止"],
+            ["project", "n", "Plan for work.", "School project.", "計畫"],
+            ["promotion", "n", "Moving up.", "Get promotion.", "升職/促銷"],
+            ["property", "n", "Thing you own.", "Private property.", "財產"],
+            ["protect", "v", "Keep safe.", "Protect ocean.", "保護"],
+            ["publication", "n", "Published book.", "New publication.", "出版物"],
+            ["qualification", "n", "Job proof.", "Teacher qualification.", "資格"],
+            ["quality", "n", "Standard of good.", "High quality.", "品質"],
+            ["quantity", "n", "Amount of stuff.", "Large quantity.", "數量"],
+            ["quarter", "n", "One of four.", "First quarter.", "四分之一"],
+            ["question", "n", "Ask for info.", "Answer question.", "問題"],
+            ["radio", "n", "Sound broadcast.", "Listen to radio.", "收音機"],
+            ["railway", "n", "Train track.", "Railway station.", "鐵路"],
+            ["reasonable", "adj", "Fair price.", "Reasonable deal.", "合理的"],
+            ["receptionist", "n", "Greeter at desk.", "Speak to receptionist.", "接待員"],
+            ["recognition", "n", "Knowing who.", "Face recognition.", "辨識"],
+            ["recommend", "v", "Suggest as good.", "Recommend a book.", "推薦"],
+            ["record", "n", "Past info.", "World record.", "紀錄"],
+            ["recycle", "v", "Use again.", "Recycle plastic.", "回收"],
+            ["reduction", "n", "Making less.", "Price reduction.", "減少"],
+            ["reference", "n", "Source of info.", "Job reference.", "參考"],
+            ["refrigerator", "n", "Cold food box.", "Kitchen refrigerator.", "冰箱"],
+            ["region", "n", "Area of land.", "Mountain region.", "區域"],
+            ["registration", "n", "Signing up.", "Car registration.", "註冊"],
+            ["regular", "adj", "Normal/steady.", "Regular meeting.", "規律的"],
+            ["relationship", "n", "Connection to people.", "Long relationship.", "關係"],
+            ["reliable", "adj", "Trustworthy.", "Reliable car.", "可靠的"],
+            ["religion", "n", "Belief system.", "World religion.", "宗教"],
+            ["remarkable", "adj", "Amazing.", "Remarkable work.", "非凡的"],
+            ["remember", "v", "Not forget.", "Remember me.", "記得"],
+            ["repetition", "n", "Doing again.", "Avoid repetition.", "重複"],
+            ["representative", "n", "Speaking for group.", "Sales representative.", "代表"],
+            ["requirement", "n", "Something needed.", "Basic requirement.", "需求"],
+            ["reservation", "n", "Booking for later.", "Dinner reservation.", "預約"],
+            ["resident", "n", "Livers in area.", "Local resident.", "居民"],
+            ["resistance", "n", "Fighting against.", "Water resistance.", "抵抗力"],
+            ["resource", "n", "Useful supply.", "Natural resource.", "資源"],
+            ["respect", "v", "Admire much.", "Respect parents.", "尊敬"],
+            ["responsibility", "n", "Your duty.", "Take responsibility.", "責任"],
+            ["restaurant", "n", "Eating place.", "Italian restaurant.", "餐廳"],
+            ["restriction", "n", "Rule that limits.", "Travel restriction.", "限制"],
+            ["result", "n", "Ending effect.", "Test result.", "結果"],
+            ["retirement", "n", "Stopping work.", "Enjoy retirement.", "退休"],
+            ["revolution", "n", "Big change.", "Digital revolution.", "革命"],
+            ["romance", "n", "Love story.", "Read romance.", "浪漫"],
+            ["routine", "n", "Daily habit.", "Morning routine.", "常規"],
+            ["sacrifice", "v", "Give up much.", "Make sacrifice.", "犧牲"],
+            ["safety", "n", "Being safe.", "Safety first.", "安全"],
+            ["salary", "n", "Job money.", "Annual salary.", "薪水"],
+            ["sandwich", "n", "Bread and meat.", "Ham sandwich.", "三明治"],
+            ["satellite", "n", "Thing in space.", "GPS satellite.", "衛星"],
+            ["satisfaction", "n", "Feeling happy.", "Job satisfaction.", "滿意"],
+            ["scholarship", "n", "Study money.", "Get scholarship.", "獎學金"],
+            ["science", "n", "Study of nature.", "Modern science.", "科學"],
+            ["scissors", "n", "Cutting tool.", "Sharp scissors.", "剪刀"],
+            ["selection", "n", "Choice of items.", "Wide selection.", "選擇"],
+            ["separate", "adj", "Not together.", "Separate rooms.", "分開的"],
+            ["sequence", "n", "Order of events.", "Number sequence.", "順序"],
+            ["serious", "adj", "Important/not fun.", "Serious problem.", "嚴重的/嚴肅的"],
+            ["service", "n", "Helping others.", "Customer service.", "服務"],
+            ["signature", "n", "Your signed name.", "Official signature.", "簽名"],
+            ["significant", "adj", "Very important.", "Significant change.", "顯著的"],
+            ["similarity", "n", "Being same.", "Look for similarity.", "相似處"],
+            ["situation", "n", "How things are.", "Difficult situation.", "情況"],
+            ["skeleton", "n", "Body bones.", "Human skeleton.", "骨架"],
+            ["software", "n", "Computer code.", "Install software.", "軟體"],
+            ["solution", "n", "How to fix.", "Best solution.", "解決方案"],
+            ["spectacular", "adj", "Amazing view.", "Spectacular view.", "壯觀的"],
+            ["strawberry", "n", "Red fruit.", "Eat strawberry.", "草莓"],
+            ["structure", "n", "How built.", "Bridge structure.", "結構"],
+            ["suitcase", "n", "Travel case.", "Pack suitcase.", "行李箱"],
+            ["supermarket", "n", "Grocery shop.", "Go to supermarket.", "超市"],
+            ["surgery", "n", "Medical cut.", "Major surgery.", "手術"],
+            ["surroundings", "n", "Area around you.", "Nice surroundings.", "環境"],
+            ["survival", "n", "Staying alive.", "Survival skills.", "生存"],
+            ["symptom", "n", "Illness sign.", "Flu symptom.", "症狀"],
+            ["technique", "n", "Skillful way.", "Study technique.", "技巧"],
+            ["technology", "n", "Modern tools.", "High technology.", "科技"],
+            ["temperature", "n", "Heat level.", "High temperature.", "溫度"],
+            ["temporary", "adj", "Short time.", "Temporary job.", "暫時的"],
+            ["territory", "n", "Land area.", "National territory.", "領土"],
+            ["theoretical", "adj", "Based on ideas.", "Theoretical math.", "理論上的"],
+            ["thunderstorm", "n", "Rain and light.", "Summer thunderstorm.", "雷雨"],
+            ["tournament", "n", "Big sport game.", "Chess tournament.", "錦標賽"],
+            ["traditional", "adj", "Old way.", "Traditional food.", "傳統的"],
+            ["traffic", "n", "Cars on road.", "Heavy traffic.", "交通"],
+            ["tragedy", "n", "Very sad event.", "Greek tragedy.", "悲劇"],
+            ["translation", "n", "Change language.", "Need translation.", "翻譯"],
+            ["transport", "n", "Moving goods/people.", "Public transport.", "運輸"],
+            ["treasure", "n", "Valuable gold.", "Hidden treasure.", "寶藏"],
+            ["treatment", "n", "Medical help.", "Hospital treatment.", "治療"],
+            ["triangle", "n", "Three sided shape.", "Draw triangle.", "三角形"],
+            ["umbrella", "n", "Rain protection.", "Open umbrella.", "雨傘"],
+            ["understand", "v", "Know meaning.", "I understand.", "理解"],
+            ["unemployed", "adj", "No job.", "Unemployed man.", "失業的"],
+            ["unexpected", "adj", "Surprise.", "Unexpected news.", "意料之外的"],
+            ["university", "n", "Highest school.", "Go to university.", "大學"],
+            ["unusual", "adj", "Not normal.", "Unusual weather.", "不尋常的"],
+            ["valuable", "adj", "Worth much money.", "Valuable ring.", "貴重的"],
+            ["variety", "n", "Many types.", "Wide variety.", "多樣化"],
+            ["vegetable", "n", "Plant food.", "Eat vegetable.", "蔬菜"],
+            ["vehicle", "n", "Car or bus.", "Motor vehicle.", "車輛"],
+            ["victory", "n", "Winning.", "Final victory.", "勝利"],
+            ["violence", "n", "Physical hurt.", "Stop violence.", "暴力"],
+            ["vocabulary", "n", "List of words.", "New vocabulary.", "詞彙"],
+            ["volcano", "n", "Fire mountain.", "Active volcano.", "火山"],
+            ["volunteer", "n", "Free helper.", "Be a volunteer.", "志工"],
+            ["warning", "n", "Telling danger.", "Storm warning.", "警告"],
+            ["weapon", "n", "Fighting tool.", "Dangerous weapon.", "武器"],
+            ["weather", "n", "Rain/sun state.", "Good weather.", "天氣"],
+            ["wonderful", "adj", "Very good.", "Wonderful life.", "美妙的"]
+        ];
 
-<!-- Slide 5: The Delicious Result -->
-<div class="slide">
-    <div class="image-side">
-        <img src="https://img.freepik.com/free-photo/happy-people-eating-together_23-2149153295.jpg" alt="People Eating">
-    </div>
-    <div class="text-side">
-        <div class="page-num">05</div>
-        <h2>Justice is Served</h2>
-        <p>The food was <span class="v">delicious</span>! Everyone in the <span class="v">neighborhood</span> heard the music. In the end, Ben felt that <span class="v">justice</span> was done because all the hard work made the guests very happy.</p>
-    </div>
-</div>
+        // 系統邏輯
+        let usedIndices = JSON.parse(localStorage.getItem('cambridge_used_indices')) || [];
+        let currentBatch = JSON.parse(localStorage.getItem('cambridge_current_batch')) || [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let shuffledQuiz = [];
 
-<div class="footer">
-    💡 <b>Learning Tip:</b> Read the <b>orange</b> words out loud and try to use them in your own story!
-</div>
+        window.onload = () => {
+            // 如果從未生成過內容，或是 currentBatch 為空，則強制生成
+            if (currentBatch.length === 0) {
+                generateNextBatch();
+            } else {
+                updateUI();
+            }
+        };
 
+        function updateUI() {
+            const batchNum = Math.ceil(usedIndices.length / 20) || 1;
+            document.getElementById('progress-text').innerText = `${usedIndices.length} / ${rawVocabData.length}`;
+            document.getElementById('remaining-count').innerText = `剩餘未學: ${rawVocabData.length - usedIndices.length}`;
+            document.getElementById('version-display').innerText = `Batch #${batchNum}`;
+            document.getElementById('quiz-version-text').innerText = `#${batchNum}`;
+            renderTable();
+        }
+
+        function generateNextBatch() {
+            // 找出還沒學過的
+            let availableIndices = [];
+            for (let i = 0; i < rawVocabData.length; i++) {
+                if (!usedIndices.includes(i)) availableIndices.push(i);
+            }
+
+            if (availableIndices.length < 20) {
+                alert("恭喜！所有單字皆已學習完畢。進度將重置重新開始。");
+                resetAllProgress();
+                return;
+            }
+
+            // 隨機選 20 個
+            availableIndices.sort(() => Math.random() - 0.5);
+            let nextBatchIndices = availableIndices.slice(0, 20);
+            
+            // 更新進度與快照
+            currentBatch = nextBatchIndices.map(idx => rawVocabData[idx]);
+            usedIndices = [...usedIndices, ...nextBatchIndices];
+            
+            // 存入儲存空間
+            localStorage.setItem('cambridge_used_indices', JSON.stringify(usedIndices));
+            localStorage.setItem('cambridge_current_batch', JSON.stringify(currentBatch));
+            
+            updateUI();
+            switchMode('list');
+            
+            // 如果不是第一次，給個成功的彈窗
+            if(usedIndices.length > 20) {
+                console.log("New batch generated.");
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('vocab-table-body');
+            tbody.innerHTML = '';
+            
+            if (currentBatch.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-20 text-center text-slate-400 font-bold italic">目前無資料，請點擊「生成下一版」按鈕。</td></tr>';
+                return;
+            }
+
+            currentBatch.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors duration-200">
+                        <td class="py-5 px-6">
+                            <div class="font-black text-indigo-700 text-lg leading-none">${item[0]}</div>
+                            <div class="text-[11px] text-slate-400 font-bold mt-1 bg-slate-100 inline-block px-2 py-0.5 rounded-md">${item[4]}</div>
+                        </td>
+                        <td class="py-5 px-2 text-center italic text-rose-500 font-black text-xs">${item[1]}</td>
+                        <td class="py-5 px-6 leading-relaxed">
+                            <p class="font-bold text-slate-700 mb-2">${item[2]}</p>
+                            <p class="italic text-slate-400 text-xs border-l-4 border-slate-200 pl-3">"${item[3]}"</p>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function switchMode(mode) {
+            const listMode = document.getElementById('list-mode');
+            const quizMode = document.getElementById('quiz-mode');
+            const navList = document.getElementById('nav-list');
+            const navQuiz = document.getElementById('nav-quiz');
+
+            if (mode === 'list') {
+                listMode.classList.remove('hidden');
+                quizMode.classList.add('hidden');
+                navList.classList.add('btn-active');
+                navQuiz.classList.remove('btn-active');
+            } else {
+                listMode.classList.add('hidden');
+                quizMode.classList.remove('hidden');
+                navList.classList.remove('btn-active');
+                navQuiz.classList.add('btn-active');
+                resetQuiz();
+            }
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            shuffledQuiz = [...currentBatch].sort(() => Math.random() - 0.5);
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const container = document.getElementById('quiz-container');
+            const feedback = document.getElementById('quiz-feedback');
+            const item = shuffledQuiz[currentQuestionIndex];
+            
+            document.getElementById('quiz-progress').innerText = `${currentQuestionIndex + 1} / 20`;
+            feedback.classList.add('hidden');
+
+            // 產生隨機選項
+            let options = [item[0]];
+            while(options.length < 4) {
+                let randomWord = rawVocabData[Math.floor(Math.random() * rawVocabData.length)][0];
+                if(!options.includes(randomWord)) options.push(randomWord);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            container.innerHTML = `
+                <div class="mb-10 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100">
+                    <p class="text-[10px] text-indigo-400 font-black uppercase mb-2 tracking-widest">Question Definition</p>
+                    <h3 class="text-2xl font-black text-slate-800 mb-6 leading-tight">${item[2]}</h3>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 italic text-slate-500 shadow-sm">
+                        "${item[3].replace(new RegExp(item[0], 'gi'), '__________')}"
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${options.map(opt => `
+                        <button onclick="checkAnswer('${opt}')" class="quiz-option w-full text-left p-5 border-2 border-slate-100 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 font-bold text-slate-700 shadow-sm">
+                            ${opt}
+                        </button>`).join('')}
+                </div>`;
+        }
+
+        function checkAnswer(selected) {
+            const correct = shuffledQuiz[currentQuestionIndex][0];
+            const buttons = document.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById('quiz-feedback');
+            
+            feedback.classList.remove('hidden');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const isCorrect = (selected === correct);
+            if (isCorrect) {
+                score++;
+                feedback.innerText = "答對了！ ✨ 太棒了";
+                feedback.className = "mt-6 p-4 rounded-2xl text-center font-bold text-lg bg-green-100 text-green-700 block shadow-sm border border-green-200";
+            } else {
+                feedback.innerText = `答錯了。正確單字是 "${correct}"`;
+                feedback.className = "mt-6 p-4 rounded-2xl text-center font-bold text-lg bg-red-100 text-red-700 block shadow-sm border border-red-200";
+            }
+
+            buttons.forEach(btn => {
+                const txt = btn.innerText.trim();
+                if(txt === correct) btn.classList.add('correct');
+                else if(txt === selected && !isCorrect) btn.classList.add('wrong');
+            });
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < 20) {
+                    showQuestion();
+                } else {
+                    finishQuiz();
+                }
+            }, 1500);
+        }
+
+        function finishQuiz() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('hidden');
+            document.getElementById('score-text').innerText = `本階段得分：${score} / 20`;
+        }
+
+        function resetAllProgress() {
+            if(confirm("確定要刪除所有學習紀錄嗎？這會讓您回到 Batch #1 重新開始。")) {
+                localStorage.clear();
+                usedIndices = [];
+                currentBatch = [];
+                location.reload();
+            }
+        }
+    </script>
 </body>
 </html>
