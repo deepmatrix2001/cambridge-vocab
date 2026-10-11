@@ -9,7 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        /* 螢幕端微調 */
+        /* 翻牌卡動態視覺 */
         .card-flip { perspective: 1000px; }
         .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .card-flip.flipped .card-inner { transform: rotateY(180deg); }
@@ -17,7 +17,7 @@
         .card-back { transform: rotateY(180deg); }
 
         /* ============================================================
-           專屬列印樣式優化 (針對 A4 紙張與學生大字體背誦設計)
+           專屬大字體列印樣式 (針對 A4 紙張與學生背誦排版)
            ============================================================ */
         @media print {
             @page {
@@ -31,11 +31,10 @@
                 margin: 0 !important;
                 padding: 0 !important;
             }
-            /* 隱藏所有網頁介面元件 */
+            /* 隱藏網頁按鈕與非列印元件 */
             nav, footer, .no-print, button, #filter-box, #view-cards, #view-quiz, .tabs-container {
                 display: none !important;
             }
-            /* 展開表格區塊 */
             #view-list {
                 display: block !important;
                 box-shadow: none !important;
@@ -43,21 +42,20 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            /* 列印專屬表頭 (學生填寫姓名、日期) */
+            /* 列印專屬表頭：學生姓名、日期、成績 */
             .print-header-area {
                 display: block !important;
-                margin-bottom: 16px;
-                border-bottom: 2px solid #000;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #000000;
                 padding-bottom: 8px;
             }
-            /* 表格與格線設定 */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
                 margin-top: 5px !important;
             }
             th, td {
-                border: 1.5px solid #333333 !important;
+                border: 1.5px solid #222222 !important;
                 padding: 8px 10px !important;
                 vertical-align: middle !important;
             }
@@ -68,7 +66,7 @@
                 font-weight: 800 !important;
                 text-align: center !important;
             }
-            /* 大字體設定 */
+            /* 單字、中文、例句大字體規範 */
             .print-word {
                 font-size: 16pt !important;
                 font-weight: 800 !important;
@@ -80,7 +78,7 @@
                 font-size: 13.5pt !important;
                 font-weight: 600 !important;
                 color: #222222 !important;
-                margin-top: 3px !important;
+                margin-top: 2px !important;
                 display: block !important;
             }
             .print-type {
@@ -96,7 +94,7 @@
                 color: #222222 !important;
                 font-style: italic !important;
             }
-            /* 防止表格行在換頁時被腰斬 */
+            /* 避免換頁時單字行被腰斬 */
             tr {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -106,7 +104,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- 網頁導覽列 (列印時自動隱藏) -->
+    <!-- 導覽列 (列印時隱藏) -->
     <nav class="bg-indigo-700 text-white shadow-md sticky top-0 z-50 no-print">
         <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
@@ -136,7 +134,7 @@
     <!-- 主內容區 -->
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
         
-        <!-- 列印專屬頁首 (螢幕上隱藏，列印時自動顯示) -->
+        <!-- 列印專屬表頭 (螢幕隱藏，列印時自動出現) -->
         <div class="print-header-area hidden">
             <div class="flex justify-between items-end">
                 <div>
@@ -151,7 +149,7 @@
             </div>
         </div>
 
-        <!-- 批次橫幅與功能控制區 (列印時自動隱藏) -->
+        <!-- 批次資訊橫幅 (列印時隱藏) -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 no-print">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -163,17 +161,14 @@
                     <p class="text-sm text-slate-500 mt-0.5">每次從完整字庫隨機生成 20 個單字，支援大字體列印紙本背誦</p>
                 </div>
 
-                <!-- 核心控制按鈕群 -->
+                <!-- 控制操作按鈕 -->
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <!-- 列印按鈕 -->
                     <button id="btn-print" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm active:scale-95 text-sm">
                         <i class="fa-solid fa-print text-base"></i> 列印單字表 (Print)
                     </button>
-                    <!-- 隨機抽 20 詞 -->
                     <button id="btn-new-batch" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm active:scale-95 text-sm">
                         <i class="fa-solid fa-dice text-base"></i> 隨機生成 20 字
                     </button>
-                    <!-- 順序換批 -->
                     <button id="btn-next-batch" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 text-sm">
                         <i class="fa-solid fa-arrow-rotate-right"></i> 換下一批
                     </button>
@@ -349,12 +344,13 @@
 
     </main>
 
-    <!-- 頁尾 (列印時自動隱藏) -->
+    <!-- 頁尾 (列印時隱藏) -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 no-print">
-        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition
+        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition • 方案 B 單檔完整版
     </footer>
 
-    <!-- 核心數據與互動腳本 -->
+    <!-- 內建完整 A-Z 中英對照資料庫與控制邏輯 -->
     <script>
         // ==============================================================
-        // 跨 A-Z 全 26 字母官方 B1 核心單字庫 (精選高頻且均勻
+        // 方案 B：擴充後的完整 A-Z 中英對照核心字庫 (內嵌於單檔)
+        // =
