@@ -7,95 +7,188 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        .card-flip {
-            perspective: 1000px;
-        }
-        .card-inner {
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-        }
-        .card-flip.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-        .card-front, .card-back {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-        }
-        .card-back {
-            transform: rotateY(180deg);
+        /* 螢幕端微調 */
+        .card-flip { perspective: 1000px; }
+        .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .card-flip.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .card-back { transform: rotateY(180deg); }
+
+        /* ============================================================
+           專屬列印樣式優化 (針對 A4 紙張與學生大字體背誦設計)
+           ============================================================ */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1.2cm 1.0cm;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 13pt !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            /* 隱藏所有網頁介面元件 */
+            nav, footer, .no-print, button, #filter-box, #view-cards, #view-quiz, .tabs-container {
+                display: none !important;
+            }
+            /* 展開表格區塊 */
+            #view-list {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            /* 列印專屬表頭 (學生填寫姓名、日期) */
+            .print-header-area {
+                display: block !important;
+                margin-bottom: 16px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 8px;
+            }
+            /* 表格與格線設定 */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 5px !important;
+            }
+            th, td {
+                border: 1.5px solid #333333 !important;
+                padding: 8px 10px !important;
+                vertical-align: middle !important;
+            }
+            th {
+                background-color: #f2f2f2 !important;
+                color: #000000 !important;
+                font-size: 12pt !important;
+                font-weight: 800 !important;
+                text-align: center !important;
+            }
+            /* 大字體設定 */
+            .print-word {
+                font-size: 16pt !important;
+                font-weight: 800 !important;
+                color: #000000 !important;
+                display: block !important;
+                line-height: 1.2 !important;
+            }
+            .print-chinese {
+                font-size: 13.5pt !important;
+                font-weight: 600 !important;
+                color: #222222 !important;
+                margin-top: 3px !important;
+                display: block !important;
+            }
+            .print-type {
+                font-size: 11.5pt !important;
+                font-family: monospace !important;
+                font-weight: bold !important;
+                color: #333333 !important;
+                text-align: center !important;
+            }
+            .print-example {
+                font-size: 12.5pt !important;
+                line-height: 1.4 !important;
+                color: #222222 !important;
+                font-style: italic !important;
+            }
+            /* 防止表格行在換頁時被腰斬 */
+            tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- 導覽列 Navigation -->
-    <nav class="bg-indigo-700 text-white shadow-md sticky top-0 z-50">
+    <!-- 網頁導覽列 (列印時自動隱藏) -->
+    <nav class="bg-indigo-700 text-white shadow-md sticky top-0 z-50 no-print">
         <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
                 <span class="text-2xl">📝</span>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Cambridge B1 Vocab</h1>
-                    <p class="text-xs text-indigo-200">劍橋英檢 PET 官方單字背誦與測驗</p>
+                    <p class="text-xs text-indigo-200">劍橋英檢 2025 官方單字庫 (跨 A-Z 全庫隨機)</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-4 text-sm bg-indigo-800/80 px-4 py-1.5 rounded-full border border-indigo-600">
                 <div class="flex items-center gap-2">
-                    <span class="text-indigo-300">總體掌握:</span>
-                    <span id="mastered-count" class="font-bold text-yellow-300 text-base">0</span>
-                    <span class="text-indigo-400">/</span>
-                    <span id="total-vocab-pool" class="font-bold text-indigo-200">0</span>
+                    <span class="text-indigo-300">字庫總量:</span>
+                    <span id="total-vocab-pool" class="font-bold text-yellow-300 text-base">0</span>
+                    <span class="text-indigo-300">字</span>
                 </div>
                 <div class="h-4 w-px bg-indigo-600"></div>
                 <div class="flex items-center gap-1.5">
                     <i class="fa-solid fa-trophy text-amber-300 text-xs"></i>
-                    <span class="text-indigo-300">最高分:</span>
+                    <span class="text-indigo-300">測驗最佳:</span>
                     <span id="best-score" class="font-bold text-emerald-300">0</span>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- 主內容區 Container -->
+    <!-- 主內容區 -->
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
         
-        <!-- 批次資訊橫幅 Batch Banner -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <!-- 列印專屬頁首 (螢幕上隱藏，列印時自動顯示) -->
+        <div class="print-header-area hidden">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight">Cambridge B1 Preliminary Vocabulary</h1>
+                    <p class="text-sm text-gray-700">Official Wordlist • <span id="print-batch-title">Batch #1</span></p>
+                </div>
+                <div class="text-sm font-medium space-x-6 text-gray-800">
+                    <span>姓名 (Name): _________________</span>
+                    <span>日期 (Date): ____________</span>
+                    <span>得分 (Score): ______ / 20</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批次橫幅與功能控制區 (列印時自動隱藏) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 no-print">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Cambridge Official 2025</span>
-                        <span id="batch-badge" class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-bold">隨機模式</span>
+                        <span class="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Cambridge Official 2025</span>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-bold">A-Z 真隨機抽題</span>
                     </div>
-                    <h2 id="batch-title" class="text-2xl font-extrabold text-slate-800 mt-1">精選核心單字 (Batch #1)</h2>
-                    <p class="text-sm text-slate-500 mt-0.5">本版隨機包含 20 個重要英檢核心單字供背誦與測驗</p>
+                    <h2 id="batch-title" class="text-2xl font-black text-slate-800 mt-1">精選核心單字 (Batch #1)</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">每次從完整字庫隨機生成 20 個單字，支援大字體列印紙本背誦</p>
                 </div>
 
-                <!-- 控制操作按鈕 Controls -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <button id="btn-new-batch" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm active:scale-95 text-sm">
-                        <i class="fa-solid fa-dice"></i> 隨機生成 20 字
+                <!-- 核心控制按鈕群 -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- 列印按鈕 -->
+                    <button id="btn-print" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm active:scale-95 text-sm">
+                        <i class="fa-solid fa-print text-base"></i> 列印單字表 (Print)
                     </button>
-                    <button id="btn-next-batch" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 text-sm">
+                    <!-- 隨機抽 20 詞 -->
+                    <button id="btn-new-batch" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm active:scale-95 text-sm">
+                        <i class="fa-solid fa-dice text-base"></i> 隨機生成 20 字
+                    </button>
+                    <!-- 順序換批 -->
+                    <button id="btn-next-batch" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 text-sm">
                         <i class="fa-solid fa-arrow-rotate-right"></i> 換下一批
-                    </button>
-                    <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
-                    <button id="btn-listen-all" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 text-sm" title="朗讀本批單字">
-                        <i class="fa-solid fa-volume-high text-indigo-600"></i> 連續朗讀
                     </button>
                 </div>
             </div>
 
-            <!-- 模式切換頁籤 Tabs -->
-            <div class="flex border-b border-slate-200 mt-6 gap-2">
-                <button id="tab-list" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check"></i> 單字列表 (Table)
+            <!-- 模式切換頁籤 -->
+            <div class="tabs-container flex border-b border-slate-200 mt-6 gap-2">
+                <button id="tab-list" class="py-2.5 px-4 font-bold text-sm border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2">
+                    <i class="fa-solid fa-table-list"></i> 單字列表 (Table)
                 </button>
-                <button id="tab-cards" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                <button id="tab-cards" class="py-2.5 px-4 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
                     <i class="fa-solid fa-layer-group"></i> 記憶翻牌卡 (Cards)
                 </button>
-                <button id="tab-quiz" class="py-2.5 px-4 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                <button id="tab-quiz" class="py-2.5 px-4 font-bold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
                     <i class="fa-solid fa-pen-to-square"></i> 版次測驗 (Quiz 20)
                 </button>
             </div>
@@ -103,139 +196,126 @@
 
         <!-- 視圖 1: 單字列表 (Table View) -->
         <section id="view-list" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/60">
-                <div class="text-sm font-medium text-slate-600">
-                    目前展示：<span id="table-count" class="font-bold text-indigo-600">20</span> 個單字
+            <div id="filter-box" class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/60 no-print">
+                <div class="text-sm font-semibold text-slate-600">
+                    本版展示：<span id="table-count" class="font-bold text-indigo-600">20</span> 個單字
                 </div>
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="filter-input" placeholder="過濾目前 20 個單字..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="filter-input" placeholder="過濾本版單字..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-100/80 text-slate-700 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
-                            <th class="py-3.5 px-4 w-12 text-center">#</th>
-                            <th class="py-3.5 px-4 w-60">Vocabulary / Chinese</th>
-                            <th class="py-3.5 px-4 w-28 text-center">Type</th>
-                            <th class="py-3.5 px-6">Definition & Example Sentence</th>
-                            <th class="py-3.5 px-3 w-16 text-center">發音</th>
+                        <tr class="bg-slate-100 text-slate-700 text-sm uppercase font-extrabold border-b border-slate-200">
+                            <th class="py-3 px-3 w-12 text-center">#</th>
+                            <th class="py-3 px-4 w-72">Vocabulary / Chinese</th>
+                            <th class="py-3 px-3 w-24 text-center">Type</th>
+                            <th class="py-3 px-6">Definition &amp; Example Sentence</th>
+                            <th class="py-3 px-2 w-14 text-center no-print">發音</th>
                         </tr>
                     </thead>
-                    <tbody id="vocab-table-body" class="divide-y divide-slate-100 text-sm">
-                        <!-- 動態插入單字列 -->
+                    <tbody id="vocab-table-body" class="divide-y divide-slate-100 text-base">
+                        <!-- 動態插入 20 筆單字 -->
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 視圖 2: 記憶翻牌卡模式 (Flashcard View) -->
-        <section id="view-cards" class="hidden">
+        <!-- 視圖 2: 記憶翻牌卡模式 (Flashcards) -->
+        <section id="view-cards" class="hidden no-print max-w-xl mx-auto">
             <div class="flex justify-between items-center mb-4">
-                <div class="text-sm text-slate-600 font-medium">
+                <div class="text-sm text-slate-600 font-semibold">
                     卡片 <span id="card-index" class="font-bold text-indigo-600">1</span> / 20
                 </div>
                 <div class="text-xs text-slate-400">點擊卡片可翻面查看中文與例句</div>
             </div>
 
-            <div class="max-w-xl mx-auto">
-                <div id="flashcard" class="card-flip w-full h-80 cursor-pointer select-none">
-                    <div class="card-inner relative w-full h-full text-center">
-                        <!-- 正面 -->
-                        <div class="card-front absolute w-full h-full bg-white rounded-3xl border-2 border-indigo-100 shadow-lg p-8 flex flex-col justify-between items-center">
-                            <div class="w-full flex justify-between items-center text-xs">
-                                <span class="bg-indigo-50 text-indigo-600 font-semibold px-2.5 py-1 rounded-full">Cambridge B1</span>
-                                <span id="card-pos-front" class="text-slate-400 font-mono italic"></span>
-                            </div>
-                            <div class="my-auto">
-                                <h3 id="card-word" class="text-4xl font-extrabold text-slate-800 mb-2"></h3>
-                                <button onclick="event.stopPropagation(); speakWord(currentBatch[currentCardIdx].word);" class="text-indigo-600 hover:text-indigo-800 text-lg p-2 rounded-full hover:bg-indigo-50 transition">
-                                    <i class="fa-solid fa-volume-high"></i>
-                                </button>
-                            </div>
-                            <div class="text-xs text-slate-400 font-medium flex items-center gap-1">
-                                <i class="fa-solid fa-arrow-rotate-right"></i> 點擊卡片翻面看中文
-                            </div>
+            <div id="flashcard" class="card-flip w-full h-80 cursor-pointer select-none">
+                <div class="card-inner relative w-full h-full text-center">
+                    <div class="card-front absolute w-full h-full bg-white rounded-3xl border-2 border-indigo-100 shadow-lg p-8 flex flex-col justify-between items-center">
+                        <div class="w-full flex justify-between items-center text-xs">
+                            <span class="bg-indigo-50 text-indigo-600 font-bold px-2.5 py-1 rounded-full">Cambridge B1</span>
+                            <span id="card-pos-front" class="text-slate-400 font-mono font-bold"></span>
                         </div>
-                        <!-- 背面 -->
-                        <div class="card-back absolute w-full h-full bg-indigo-600 text-white rounded-3xl shadow-xl p-8 flex flex-col justify-between items-center">
-                            <div class="w-full flex justify-between items-center text-xs">
-                                <span class="bg-white/20 text-white font-semibold px-2.5 py-1 rounded-full">釋義與例句</span>
-                                <span id="card-pos-back" class="text-indigo-200 font-mono italic"></span>
-                            </div>
-                            <div class="my-auto px-4">
-                                <div id="card-chinese" class="text-3xl font-bold mb-4"></div>
-                                <div id="card-example" class="text-indigo-100 text-sm leading-relaxed italic bg-white/10 p-3.5 rounded-xl border border-white/10"></div>
-                            </div>
-                            <div class="text-xs text-indigo-200 flex items-center gap-1">
-                                <i class="fa-solid fa-arrow-rotate-left"></i> 點擊卡片翻回正面
-                            </div>
+                        <div class="my-auto">
+                            <h3 id="card-word" class="text-4xl font-extrabold text-slate-800 mb-2"></h3>
+                            <button onclick="event.stopPropagation(); speakWord(currentBatch[currentCardIdx].w);" class="text-indigo-600 hover:text-indigo-800 text-xl p-2 rounded-full hover:bg-indigo-50 transition">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                        <div class="text-xs text-slate-400 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-rotate-right"></i> 點擊卡片翻面看中文
+                        </div>
+                    </div>
+                    <div class="card-back absolute w-full h-full bg-indigo-600 text-white rounded-3xl shadow-xl p-8 flex flex-col justify-between items-center">
+                        <div class="w-full flex justify-between items-center text-xs">
+                            <span class="bg-white/20 text-white font-bold px-2.5 py-1 rounded-full">釋義與例句</span>
+                            <span id="card-pos-back" class="text-indigo-200 font-mono font-bold"></span>
+                        </div>
+                        <div class="my-auto px-4">
+                            <div id="card-chinese" class="text-3xl font-extrabold mb-3"></div>
+                            <div id="card-example" class="text-indigo-100 text-sm leading-relaxed italic bg-white/10 p-3.5 rounded-xl border border-white/10"></div>
+                        </div>
+                        <div class="text-xs text-indigo-200 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> 點擊卡片翻回正面
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- 卡片導覽按鈕 -->
-                <div class="flex justify-center items-center gap-4 mt-6">
-                    <button id="card-prev" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium px-5 py-2.5 rounded-xl transition shadow-sm">
-                        <i class="fa-solid fa-chevron-left mr-1"></i> 上一個
-                    </button>
-                    <button id="card-next" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm">
-                        下一個 <i class="fa-solid fa-chevron-right ml-1"></i>
-                    </button>
-                </div>
+            <div class="flex justify-center items-center gap-4 mt-6">
+                <button id="card-prev" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold px-5 py-2.5 rounded-xl transition shadow-sm">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> 上一個
+                </button>
+                <button id="card-next" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-sm">
+                    下一個 <i class="fa-solid fa-chevron-right ml-1"></i>
+                </button>
             </div>
         </section>
 
-        <!-- 視圖 3: 測驗模式 (Quiz View) -->
-        <section id="view-quiz" class="hidden max-w-2xl mx-auto">
-            
-            <!-- 測驗進行中面板 -->
+        <!-- 視圖 3: 測驗模式 (Quiz) -->
+        <section id="view-quiz" class="hidden no-print max-w-2xl mx-auto">
             <div id="quiz-active-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-                <!-- 進度條與題數 -->
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">版次測驗</span>
                         <h3 class="font-bold text-slate-800 text-base">Question <span id="quiz-current-q">1</span> / 20</h3>
                     </div>
-                    <span class="text-xs font-bold text-indigo-600" id="quiz-score-badge">得分: 0</span>
+                    <span class="text-xs font-extrabold text-indigo-600" id="quiz-score-badge">得分: 0</span>
                 </div>
                 <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-6">
                     <div id="quiz-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
                 </div>
 
-                <!-- 題目 -->
                 <div class="text-center py-4 border-b border-slate-100 mb-6">
                     <p class="text-xs text-slate-400 mb-1">請選出正確的中文意思：</p>
                     <div class="flex items-center justify-center gap-3">
                         <h2 id="quiz-word" class="text-3xl font-extrabold text-slate-800"></h2>
-                        <button id="quiz-speak-btn" class="text-indigo-600 hover:text-indigo-800 text-lg p-2 rounded-full hover:bg-indigo-50">
+                        <button id="quiz-speak-btn" class="text-indigo-600 hover:text-indigo-800 text-xl p-2 rounded-full hover:bg-indigo-50">
                             <i class="fa-solid fa-volume-high"></i>
                         </button>
                     </div>
-                    <span id="quiz-pos" class="inline-block mt-1 font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded"></span>
+                    <span id="quiz-pos" class="inline-block mt-1 font-mono text-xs text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded"></span>
                 </div>
 
-                <!-- 四選一選項 -->
-                <div id="quiz-options" class="grid grid-cols-1 gap-3 mb-6">
-                    <!-- 動態生成 4 個選項按鈕 -->
-                </div>
+                <div id="quiz-options" class="grid grid-cols-1 gap-3 mb-6"></div>
 
-                <!-- 答題解析與下一題 -->
                 <div id="quiz-feedback" class="hidden p-4 rounded-xl mb-4 text-sm transition">
                     <div id="feedback-text" class="font-bold mb-1"></div>
                     <div id="feedback-example" class="text-slate-600 text-xs italic"></div>
                 </div>
 
                 <div class="flex justify-end">
-                    <button id="quiz-next-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm">
+                    <button id="quiz-next-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-sm">
                         下一題 <i class="fa-solid fa-arrow-right ml-1"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- 測驗結算畫面 (Quiz Result) -->
+            <!-- 測驗結算畫面 -->
             <div id="quiz-result-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
                 <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto text-4xl mb-4">
                     🏆
@@ -261,595 +341,20 @@
                         <i class="fa-solid fa-rotate-left mr-1"></i> 重新測驗本版
                     </button>
                     <button id="btn-quiz-new-batch" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-sm">
-                        <i class="fa-solid fa-dice mr-1"></i> 生成下一組 20 字
+                        <i class="fa-solid fa-dice mr-1"></i> 生成下一批 20 字
                     </button>
                 </div>
             </div>
-
         </section>
 
     </main>
 
-    <!-- 頁尾 Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition • 隨機抽題學習系統
+    <!-- 頁尾 (列印時自動隱藏) -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 no-print">
+        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition
     </footer>
 
-    <!-- 資料庫與核心邏輯 JS -->
+    <!-- 核心數據與互動腳本 -->
     <script>
-        // ==========================================
-        // 劍橋官方 PET 2025 核心單字庫 (精選中英高頻詞庫)
-        // ==========================================
-        const VOCAB_DATABASE = [
-            { word: "ability", pos: "n.", chinese: "能力；才幹", example: "She has the ability to speak three languages fluently." },
-            { word: "acceptable", pos: "adj.", chinese: "可接受的；令人滿意的", example: "We need to agree on an acceptable solution." },
-            { word: "access", pos: "n.", chinese: "使用權；通道；存取", example: "Students have free access to the library resources." },
-            { word: "accompany", pos: "v.", chinese: "陪同；陪伴", example: "Children must be accompanied by an adult." },
-            { word: "according to", pos: "prep phr.", chinese: "根據；按照", example: "According to the forecast, it will rain tomorrow." },
-            { word: "accurate", pos: "adj.", chinese: "精確的；準確的", example: "Her description of the accident was very accurate." },
-            { word: "achieve", pos: "v.", chinese: "實現；達成", example: "Work hard to achieve your dream of studying abroad." },
-            { word: "achievement", pos: "n.", chinese: "成就；成績", example: "Winning the competition was a great achievement." },
-            { word: "active", pos: "adj.", chinese: "活躍的；積極的", example: "He stays active by playing tennis twice a week." },
-            { word: "admire", pos: "v.", chinese: "欽佩；讚賞", example: "I really admire people who can speak multiple languages." },
-            { word: "admission", pos: "n.", chinese: "入場費；准許進入", example: "Admission to the museum is free on Sundays." },
-            { word: "admit", pos: "v.", chinese: "承認；准許進入", example: "He admitted making a mistake on the test." },
-            { word: "advantage", pos: "n.", chinese: "優點；優勢", example: "One advantage of living near school is saving time." },
-            { word: "adventure", pos: "n.", chinese: "冒險；奇遇", example: "Traveling alone across the country was an exciting adventure." },
-            { word: "advertise", pos: "v.", chinese: "做廣告；宣傳", example: "They decided to advertise their new product online." },
-            { word: "advertisement", pos: "n.", chinese: "廣告", example: "I saw an interesting job advertisement in the paper." },
-            { word: "afford", pos: "v.", chinese: "負擔得起；買得起", example: "We cannot afford to waste any more time." },
-            { word: "ahead", pos: "adv.", chinese: "在前面；領先；提前", example: "You need to plan ahead to book cheap tickets." },
-            { word: "aim", pos: "n. & v.", chinese: "目標；企圖", example: "Our main aim is to improve students' speaking confidence." },
-            { word: "allow", pos: "v.", chinese: "允許；准許", example: "Passengers are not allowed to use phones during takeoff." },
-            { word: "ambition", pos: "n.", chinese: "抱負；志向", example: "His ambition is to study engineering at university." },
-            { word: "ancient", pos: "adj.", chinese: "古代的；古老的", example: "The ancient castle was built over five centuries ago." },
-            { word: "anniversary", pos: "n.", chinese: "週年紀念日", example: "They celebrated their tenth wedding anniversary yesterday." },
-            { word: "announce", pos: "v.", chinese: "宣布；宣告", example: "The headteacher will announce the winners this afternoon." },
-            { word: "annoy", pos: "v.", chinese: "使惱怒；打擾", example: "It annoys me when people talk loudly in the cinema." },
-            { word: "annual", pos: "adj.", chinese: "每年的；年度的", example: "The school holds an annual sports day every November." },
-            { word: "apologise", pos: "v.", chinese: "道歉；致歉", example: "You should apologise to your sister for breaking her toy." },
-            { word: "appearance", pos: "n.", chinese: "外表；外觀；出現", example: "Never judge someone solely by their appearance." },
-            { word: "application", pos: "n.", chinese: "申請表；應用軟體", example: "Please complete the application form and send it in." },
-            { word: "apply", pos: "v.", chinese: "申請；應用", example: "She decided to apply for a scholarship in the UK." },
-            { word: "appointment", pos: "n.", chinese: "預約；約定", example: "I made an appointment with the dentist for tomorrow morning." },
-            { word: "approach", pos: "v. & n.", chinese: "接近；方法", example: "The storm is approaching from the east." },
-            { word: "approve", pos: "v.", chinese: "贊同；核准", example: "My parents approved of my plan to study abroad." },
-            { word: "approximately", pos: "adv.", chinese: "大約；大概", example: "The trip takes approximately two hours by train." },
-            { word: "architect", pos: "n.", chinese: "建築師", example: "The architect designed a modern eco-friendly library." },
-            { word: "architecture", pos: "n.", chinese: "建築風格；建築學", example: "Rome is famous for its stunning historic architecture." },
-            { word: "arrange", pos: "v.", chinese: "安排；籌備", example: "We arranged to meet outside the museum at seven." },
-            { word: "arrangement", pos: "n.", chinese: "安排；約定", example: "Have you made all the travel arrangements for the trip?" },
-            { word: "artificial", pos: "adj.", chinese: "人造的；人工的", example: "The indoor ski slope uses artificial snow." },
-            { word: "ashamed", pos: "adj.", chinese: "羞愧的；難為情的", example: "He felt ashamed because he didn't tell the truth." },
-            { word: "aspirin", pos: "n.", chinese: "阿斯匹靈 (止痛藥)", example: "Take an aspirin if you have a bad headache." },
-            { word: "athlete", pos: "n.", chinese: "運動員", example: "Olympic athletes train intensely every single day." },
-            { word: "atmosphere", pos: "n.", chinese: "氣氛；大氣層", example: "The cafe has a cozy and relaxing atmosphere." },
-            { word: "attach", pos: "v.", chinese: "附上；貼上", example: "Please attach a recent photograph to your form." },
-            { word: "attempt", pos: "v. & n.", chinese: "企圖；嘗試", example: "He made an attempt to finish the marathon." },
-            { word: "attend", pos: "v.", chinese: "出席；參加", example: "All students are required to attend the morning meeting." },
-            { word: "attitude", pos: "n.", chinese: "態度；看法", example: "A positive attitude will help you overcome difficulties." },
-            { word: "attract", pos: "v.", chinese: "吸引；引起興趣", example: "The night market attracts thousands of visitors." },
-            { word: "attraction", pos: "n.", chinese: "吸引力；觀光景點", example: "The aquarium is one of the city's top attractions." },
-            { word: "audience", pos: "n.", chinese: "觀眾；聽眾", example: "The audience clapped enthusiastically after the show." },
-            { word: "available", pos: "adj.", chinese: "可獲得的；有空的", example: "Are there any tickets available for tonight?" },
-            { word: "average", pos: "adj. & n.", chinese: "平均的；一般的", example: "The average temperature in July is 28 degrees." },
-            { word: "avoid", pos: "v.", chinese: "避開；避免", example: "Take the subway to avoid heavy downtown traffic." },
-            { word: "awesome", pos: "adj.", chinese: "太棒了；極好的", example: "We had an awesome time camping in the mountains." },
-            { word: "awful", pos: "adj.", chinese: "糟糕的；可怕的", example: "The weather was awful with freezing rain." },
-            { word: "background", pos: "n.", chinese: "背景；經歷", example: "She comes from a musical background and plays violin." },
-            { word: "backpack", pos: "n.", chinese: "背包", example: "Put your notebook and water into your backpack." },
-            { word: "bandage", pos: "n.", chinese: "繃帶", example: "The nurse wrapped a clean bandage around his sprained wrist." },
-            { word: "bargain", pos: "n. & v.", chinese: "特價品；討價還價", example: "At five pounds, this warm jacket was a real bargain." },
-            { word: "behave", pos: "v.", chinese: "守規矩；舉止得體", example: "The children behaved very politely during the visit." },
-            { word: "behaviour", pos: "n.", chinese: "行為；舉止", example: "Good behaviour in class is rewarded with points." },
-            { word: "benefit", pos: "n. & v.", chinese: "益處；好處", example: "Regular exercise brings numerous health benefits." },
-            { word: "bestseller", pos: "n.", chinese: "暢銷書", example: "Her new novel quickly became an international bestseller." },
-            { word: "bitter", pos: "adj.", chinese: "苦的；嚴酷的", example: "Dark chocolate can have a deliciously bitter taste." },
-            { word: "blame", pos: "v. & n.", chinese: "責怪；歸咎於", example: "Don't blame yourself for something you couldn't control." },
-            { word: "boarding pass", pos: "n.", chinese: "登機證", example: "Please show your passport and boarding pass at the gate." },
-            { word: "bother", pos: "v.", chinese: "打擾；煩擾；費心", example: "Sorry to bother you, but do you know what time it is?" },
-            { word: "breathe", pos: "v.", chinese: "呼吸", example: "Take a deep breath and breathe out slowly." },
-            { word: "breeze", pos: "n.", chinese: "微風", example: "A gentle breeze blew across the sunny beach." },
-            { word: "brilliant", pos: "adj.", chinese: "出色的；聰穎的", example: "That was a brilliant idea for our group project." },
-            { word: "brochure", pos: "n.", chinese: "小手冊；宣傳冊", example: "The travel agency gave us a brochure about tours in Japan." },
-            { word: "calculate", pos: "v.", chinese: "計算；推算", example: "Use this formula to calculate the total cost." },
-            { word: "campsite", pos: "n.", chinese: "露營地", example: "We set up our tents at a scenic campsite near the lake." },
-            { word: "cancel", pos: "v.", chinese: "取消", example: "The flight was cancelled due to dense fog." },
-            { word: "candidate", pos: "n.", chinese: "應試者；候選人", example: "Each candidate must bring an ID card to the exam room." },
-            { word: "career", pos: "n.", chinese: "職業生涯；事業", example: "She is planning a career in international journalism." },
-            { word: "careless", pos: "adj.", chinese: "粗心的；馬虎的", example: "He lost marks because of a careless spelling mistake." },
-            { word: "casual", pos: "adj.", chinese: "非正式的；休閒的", example: "Smart casual dress is suitable for tonight's party." },
-            { word: "celebrate", pos: "v.", chinese: "慶祝；祝賀", example: "We gathered to celebrate my grandfather's 80th birthday." },
-            { word: "celebrity", pos: "n.", chinese: "名人；明星", example: "The concert was attended by several well-known celebrities." },
-            { word: "century", pos: "n.", chinese: "世紀；百年", example: "The historic church was built in the 17th century." },
-            { word: "ceremony", pos: "n.", chinese: "典禮；儀式", example: "The graduation ceremony will take place in the hall." },
-            { word: "certificate", pos: "n.", chinese: "證書；證明書", example: "You will receive a certificate after completing the course." },
-            { word: "challenge", pos: "n. & v.", chinese: "挑戰；質疑", example: "Learning a new language is a challenge, but rewarding." },
-            { word: "challenging", pos: "adj.", chinese: "具挑戰性的；考驗的", example: "The PET reading section can be quite challenging." },
-            { word: "champion", pos: "n.", chinese: "冠軍；優勝者", example: "The young tennis player became the national champion." },
-            { word: "championship", pos: "n.", chinese: "錦標賽；總決賽", example: "Our school soccer team reached the championship finals." },
-            { word: "character", pos: "n.", chinese: "角色；性格；文字", example: "He played the main character in the school theatre." },
-            { word: "charity", pos: "n.", chinese: "慈善機構；善舉", example: "The marathon raised funds for a local children's charity." },
-            { word: "charming", pos: "adj.", chinese: "迷人的；有魅力的", example: "We stayed in a charming cottage in the countryside." },
-            { word: "cheerful", pos: "adj.", chinese: "開朗的；快樂的", example: "Her cheerful smile always brightens up the room." },
-            { word: "climate", pos: "n.", chinese: "氣候", example: "The island has a warm and sunny climate all year." },
-            { word: "climate change", pos: "n.", chinese: "氣候變遷", example: "Countries met to discuss urgent actions against climate change." },
-            { word: "colleague", pos: "n.", chinese: "同事", example: "She discussed the new proposal with her colleagues." },
-            { word: "collection", pos: "n.", chinese: "收藏；收集", example: "The museum has an impressive collection of modern art." },
-            { word: "communicate", pos: "v.", chinese: "溝通；交流", example: "Email makes it easy to communicate across continents." },
-            { word: "communication", pos: "n.", chinese: "溝通；通訊", example: "Good communication skills are essential in the workplace." },
-            { word: "compare", pos: "v.", chinese: "比較；對照", example: "Compare the two pictures and describe the differences." },
-            { word: "compete", pos: "v.", chinese: "競爭；參加比賽", example: "Over 500 athletes came to compete in the tournament." },
-            { word: "competition", pos: "n.", chinese: "競賽；比賽", example: "She won first prize in the national writing competition." },
-            { word: "competitor", pos: "n.", chinese: "競爭者；參賽者", example: "Every competitor gave their best effort until the end." },
-            { word: "complain", pos: "v.", chinese: "抱怨；投訴", example: "The customers complained about the slow service." },
-            { word: "complaint", pos: "n.", chinese: "投訴；抱怨", example: "We sent a formal complaint letter regarding the delay." },
-            { word: "completely", pos: "adv.", chinese: "完全地；徹底地", example: "I completely forgot that our homework was due today!" },
-            { word: "complicated", pos: "adj.", chinese: "複雜的；難懂的", example: "The instructions seemed complicated at first." },
-            { word: "concentrate", pos: "v.", chinese: "專注；集中精神", example: "It is hard to concentrate when there is loud music." },
-            { word: "conclusion", pos: "n.", chinese: "結論；推論", example: "In conclusion, daily reading expands your vocabulary." },
-            { word: "confident", pos: "adj.", chinese: "有自信的", example: "With steady practice, you will feel confident in the exam." },
-            { word: "confirm", pos: "v.", chinese: "確認；證實", example: "Please call the hotel to confirm your booking." },
-            { word: "confused", pos: "adj.", chinese: "感到困惑的", example: "I was confused by the signs and took the wrong road." },
-            { word: "congratulations", pos: "exclam.", chinese: "恭喜；祝賀", example: "Congratulations on passing your B1 Preliminary exam!" },
-            { word: "connect", pos: "v.", chinese: "連接；接通", example: "Click here to connect your laptop to the Wi-Fi." },
-            { word: "connection", pos: "n.", chinese: "連接；轉乘航班/火車", example: "We missed our flight connection in London due to delay." },
-            { word: "consider", pos: "v.", chinese: "考慮；斟酌", example: "You should consider all options before deciding." },
-            { word: "convenient", pos: "adj.", chinese: "方便的；便利的", example: "Living near the MRT station is extremely convenient." },
-            { word: "convince", pos: "v.", chinese: "說服；使信服", example: "I couldn't convince him to join our study group." },
-            { word: "courage", pos: "n.", chinese: "勇氣；膽量", example: "It takes courage to speak English in front of an audience." },
-            { word: "creative", pos: "adj.", chinese: "有創意的；創造力的", example: "The students came up with creative ideas for recycling." },
-            { word: "crowded", pos: "adj.", chinese: "擁擠的", example: "The train station is always crowded during rush hour." },
-            { word: "cruel", pos: "adj.", chinese: "殘忍的；殘酷的", example: "It is cruel to leave pets in a hot car in summer." },
-            { word: "cultural", pos: "adj.", chinese: "文化的", example: "The festival celebrated cultural diversity." },
-            { word: "curious", pos: "adj.", chinese: "好奇的", example: "Children are naturally curious about science." },
-            { word: "currency", pos: "n.", chinese: "貨幣", example: "What is the local currency used in Japan?" },
-            { word: "customer", pos: "n.", chinese: "顧客；客戶", example: "The store works hard to satisfy every customer." },
-            { word: "damage", pos: "n. & v.", chinese: "損害；破壞", example: "The storm caused severe damage to buildings." },
-            { word: "decision", pos: "n.", chinese: "決定；決策", example: "Making the decision to study abroad required thought." },
-            { word: "decorate", pos: "v.", chinese: "裝飾；佈置", example: "We decorated the classroom with festive lights." },
-            { word: "decrease", pos: "v. & n.", chinese: "減少；降低", example: "Traffic accidents decreased after the new rules." },
-            { word: "defeat", pos: "v. & n.", chinese: "擊敗；挫敗", example: "Our team defeated the reigning champions in the final." },
-            { word: "definitely", pos: "adv.", chinese: "肯定地；毫無疑問", example: "I will definitely recommend this book to my friends." },
-            { word: "delay", pos: "n. & v.", chinese: "耽擱；延誤", example: "We apologize for the delay caused by weather." },
-            { word: "delete", pos: "v.", chinese: "刪除", example: "Be careful not to delete important project files." },
-            { word: "delicious", pos: "adj.", chinese: "美味的；可口的", example: "My mother baked a delicious strawberry cake." },
-            { word: "delighted", pos: "adj.", chinese: "非常高興的；欣喜的", example: "She was delighted to receive the award." },
-            { word: "deliver", pos: "v.", chinese: "遞送；發送", example: "The online shop delivers packages within two days." },
-            { word: "demand", pos: "n. & v.", chinese: "需求；要求", example: "There is a high demand for English teachers." },
-            { word: "departure", pos: "n.", chinese: "啟程；出發", example: "Check the departure screen for your flight gate." },
-            { word: "depend on", pos: "phr v.", chinese: "取決於；依賴", example: "Whether we go hiking depends on the weather." },
-            { word: "deposit", pos: "n. & v.", chinese: "押金；存款", example: "You must pay a deposit when renting the apartment." },
-            { word: "depressed", pos: "adj.", chinese: "沮喪的；憂鬱的", example: "He felt depressed after losing, but soon bounced back." },
-            { word: "describe", pos: "v.", chinese: "描述；描繪", example: "Can you describe the person you saw earlier?" },
-            { word: "destination", pos: "n.", chinese: "目的地", example: "Kyoto is one of the top travel destinations in Asia." },
-            { word: "destroy", pos: "v.", chinese: "摧毀；破壞", example: "The fire destroyed the old wooden storehouse." },
-            { word: "diet", pos: "n.", chinese: "日常飲食；節食", example: "A balanced diet with fresh fruit keeps you healthy." },
-            { word: "difficulty", pos: "n.", chinese: "困難；困境", example: "If you have any difficulty, ask the teacher for help." },
-            { word: "disabled", pos: "adj.", chinese: "殘疾的；身障的", example: "The new buses offer ramps for disabled passengers." },
-            { word: "disadvantage", pos: "n.", chinese: "劣勢；缺點", example: "One disadvantage of living far is the daily commute." },
-            { word: "disappear", pos: "v.", chinese: "消失；不見", example: "The sun disappeared behind thick storm clouds." },
-            { word: "disappointed", pos: "adj.", chinese: "感到失望的", example: "He was disappointed that the concert was canceled." },
-            { word: "discount", pos: "n.", chinese: "折扣；優惠", example: "Students receive a 20 percent discount on tickets." },
-            { word: "discover", pos: "v.", chinese: "發現；發覺", example: "Scientists discovered a rare butterfly species in the forest." },
-            { word: "discuss", pos: "v.", chinese: "討論；商討", example: "Let's sit down and discuss how to divide the homework." },
-            { word: "disease", pos: "n.", chinese: "疾病", example: "Washing hands regularly prevents the spread of disease." },
-            { word: "disturb", pos: "v.", chinese: "打擾；干擾", example: "Please do not disturb him while he is studying." },
-            { word: "documentary", pos: "n.", chinese: "紀錄片", example: "We watched an inspiring nature documentary about oceans." },
-            { word: "doubt", pos: "n. & v.", chinese: "懷疑；不確定", example: "There is no doubt that regular practice helps." },
-            { word: "education", pos: "n.", chinese: "教育", example: "A solid education opens doors to great career opportunities." },
-            { word: "effective", pos: "adj.", chinese: "有效的", example: "Flashcards are an effective way to learn vocabulary." },
-            { word: "efficient", pos: "adj.", chinese: "高效的；效率高的", example: "The bullet train is fast and highly efficient." },
-            { word: "effort", pos: "n.", chinese: "努力；精力", example: "With continuous effort, anyone can master English." },
-            { word: "elderly", pos: "adj.", chinese: "年長的；長者", example: "You should give up your seat to elderly passengers." },
-            { word: "election", pos: "n.", chinese: "選舉", example: "Students held an election for class president." },
-            { word: "electronic", pos: "adj.", chinese: "電子的", example: "Please turn off electronic devices during takeoff." },
-            { word: "elementary", pos: "adj.", chinese: "初級的；基礎的", example: "This course covers elementary English grammar." },
-            { word: "embarrassed", pos: "adj.", chinese: "尷尬的；難為情的", example: "I was embarrassed when my phone rang in the test." },
-            { word: "emergency", pos: "n.", chinese: "緊急情況；突發事件", example: "Dial 119 immediately in case of a medical emergency." },
-            { word: "employee", pos: "n.", chinese: "員工；雇員", example: "The company provides safety training for every employee." },
-            { word: "employer", pos: "n.", chinese: "雇主；老闆", example: "A good employer supports staff in learning new skills." },
-            { word: "employment", pos: "n.", chinese: "就業；職業", example: "Employment opportunities grew after the tech park opened." },
-            { word: "encourage", pos: "v.", chinese: "鼓勵；激勵", example: "My teacher encourages us to speak without fear of errors." },
-            { word: "energy", pos: "n.", chinese: "精力；活力；能源", example: "Playing sports takes a lot of time and energy." },
-            { word: "engineer", pos: "n.", chinese: "工程師", example: "Engineers designed this durable electric car." },
-            { word: "enormous", pos: "adj.", chinese: "巨大的；龐大的", example: "An enormous cruise ship arrived at the port." },
-            { word: "entertain", pos: "v.", chinese: "娛樂；使歡樂", example: "Street musicians entertained the tourists in the square." },
-            { word: "entertainment", pos: "n.", chinese: "娛樂；休閒活動", example: "Video games and movies are popular forms of entertainment." },
-            { word: "environment", pos: "n.", chinese: "環境；大自然", example: "We must reduce plastic waste to protect our environment." },
-            { word: "equipment", pos: "n.", chinese: "設備；裝備", example: "Make sure you bring proper hiking equipment." },
-            { word: "escape", pos: "v. & n.", chinese: "逃離；逃脫", example: "The cat managed to escape through the open window." },
-            { word: "especially", pos: "adv.", chinese: "特別；尤其", example: "I love Japanese sweets, especially strawberry pudding." },
-            { word: "essential", pos: "adj.", chinese: "必不可少的；極重要的", example: "Drinking enough water is essential for staying healthy." },
-            { word: "evidence", pos: "n.", chinese: "證據；跡象", example: "The detective searched the room for important evidence." },
-            { word: "exchange", pos: "v. & n.", chinese: "交換；兌換；交流", example: "She went to England on a student exchange program." },
-            { word: "exhausted", pos: "adj.", chinese: "筋疲力盡的", example: "After walking twenty miles, he was completely exhausted." },
-            { word: "exhibition", pos: "n.", chinese: "展覽；展示會", example: "There is an exciting photo exhibition at the art hall." },
-            { word: "expensive", pos: "adj.", chinese: "昂貴的", example: "Eating at five-star restaurants can be very expensive." },
-            { word: "experience", pos: "n. & v.", chinese: "經驗；體驗", example: "Volunteering at the shelter was a valuable experience." },
-            { word: "experiment", pos: "n. & v.", chinese: "實驗；試驗", example: "In chemistry class, we did an experiment on liquids." },
-            { word: "expert", pos: "n. & adj.", chinese: "專家；熟練的", example: "The computer expert resolved our network issue promptly." },
-            { word: "explain", pos: "v.", chinese: "解釋；說明", example: "Can you explain how this mobile application works?" },
-            { word: "explore", pos: "v.", chinese: "探索；勘查", example: "We rented bikes to explore the streets of Kyoto." },
-            { word: "extraordinary", pos: "adj.", chinese: "非凡的；奇特的", example: "The young artist showed extraordinary creative talent." },
-            { word: "extremely", pos: "adv.", chinese: "極度；非常", example: "It is extremely helpful to review words right after class." }
-        ];
-
-        // ==========================================
-        // 核心應用程式狀態管理
-        // ==========================================
-        let currentBatch = [];
-        let currentCardIdx = 0;
-        let quizQuestions = [];
-        let quizCurrentIndex = 0;
-        let quizScore = 0;
-        let quizMistakes = [];
-        let batchCounter = 1;
-
-        // 初始化與 LocalStorage 載入
-        document.addEventListener('DOMContentLoaded', () => {
-            initStorage();
-            generateNewBatch();
-            setupEventListeners();
-        });
-
-        function initStorage() {
-            document.getElementById('total-vocab-pool').textContent = VOCAB_DATABASE.length;
-            const mastered = localStorage.getItem('cambridge_mastered_words') ? JSON.parse(localStorage.getItem('cambridge_mastered_words')) : [];
-            document.getElementById('mastered-count').textContent = mastered.length;
-            
-            const bestScore = localStorage.getItem('cambridge_best_score') || 0;
-            document.getElementById('best-score').textContent = bestScore;
-        }
-
-        // 隨機抽選 20 個單字作為當前 Batch
-        function generateNewBatch() {
-            // 洗牌演算法
-            const shuffled = [...VOCAB_DATABASE].sort(() => 0.5 - Math.random());
-            currentBatch = shuffled.slice(0, 20);
-            
-            document.getElementById('batch-title').textContent = `精選核心單字 (Batch #${batchCounter})`;
-            
-            renderTable(currentBatch);
-            setupFlashcards();
-            resetQuiz();
-        }
-
-        // ==========================================
-        // 1. 表格渲染 (Table View)
-        // ==========================================
-        function renderTable(words) {
-            const tbody = document.getElementById('vocab-table-body');
-            tbody.innerHTML = '';
-            document.getElementById('table-count').textContent = words.length;
-
-            words.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-                tr.innerHTML = `
-                    <td class="py-3 px-4 text-center font-bold text-slate-400 text-xs">${index + 1}</td>
-                    <td class="py-3 px-4">
-                        <div class="font-extrabold text-slate-800 text-base">${item.word}</div>
-                        <div class="text-xs text-indigo-600 font-medium">${item.chinese}</div>
-                    </td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="inline-block bg-slate-100 text-slate-600 text-xs font-mono font-bold px-2 py-0.5 rounded">
-                            ${item.pos}
-                        </span>
-                    </td>
-                    <td class="py-3 px-6 text-slate-600 text-xs leading-relaxed italic">
-                        "${item.example}"
-                    </td>
-                    <td class="py-3 px-3 text-center">
-                        <button onclick="speakWord('${item.word}')" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-full hover:bg-indigo-50 transition" title="朗讀發音">
-                            <i class="fa-solid fa-volume-high"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // ==========================================
-        // 2. 記憶翻牌卡 (Flashcards)
-        // ==========================================
-        function setupFlashcards() {
-            currentCardIdx = 0;
-            updateCardDisplay();
-        }
-
-        function updateCardDisplay() {
-            if (currentBatch.length === 0) return;
-            const cardEl = document.getElementById('flashcard');
-            cardEl.classList.remove('flipped');
-
-            const item = currentBatch[currentCardIdx];
-            document.getElementById('card-index').textContent = currentCardIdx + 1;
-            document.getElementById('card-word').textContent = item.word;
-            document.getElementById('card-pos-front').textContent = item.pos;
-            document.getElementById('card-pos-back').textContent = item.pos;
-            document.getElementById('card-chinese').textContent = item.chinese;
-            document.getElementById('card-example').textContent = `"${item.example}"`;
-        }
-
-        // ==========================================
-        // 3. 測驗模式邏輯 (Quiz Mode)
-        // ==========================================
-        function resetQuiz() {
-            document.getElementById('quiz-active-card').classList.remove('hidden');
-            document.getElementById('quiz-result-card').classList.add('hidden');
-            
-            // 建立 20 題測驗，以 currentBatch 為主
-            quizQuestions = currentBatch.map(target => {
-                // 挑選 3 個干擾選項
-                const distractors = VOCAB_DATABASE
-                    .filter(w => w.word !== target.word)
-                    .sort(() => 0.5 - Math.random())
-                    .slice(0, 3)
-                    .map(w => w.chinese);
-                
-                const options = [target.chinese, ...distractors].sort(() => 0.5 - Math.random());
-                return {
-                    target: target,
-                    options: options,
-                    userAnswer: null,
-                    isCorrect: false
-                };
-            });
-
-            quizCurrentIndex = 0;
-            quizScore = 0;
-            quizMistakes = [];
-            loadQuizQuestion(0);
-        }
-
-        function loadQuizQuestion(index) {
-            const q = quizQuestions[index];
-            document.getElementById('quiz-current-q').textContent = index + 1;
-            document.getElementById('quiz-score-badge').textContent = `得分: ${quizScore}`;
-            
-            const progressPct = ((index) / 20) * 100;
-            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
-
-            document.getElementById('quiz-word').textContent = q.target.word;
-            document.getElementById('quiz-pos').textContent = q.target.pos;
-            
-            // 重設按鈕語音
-            document.getElementById('quiz-speak-btn').onclick = () => speakWord(q.target.word);
-
-            // 清理解析與下一題按鈕
-            document.getElementById('quiz-feedback').classList.add('hidden');
-            document.getElementById('quiz-next-btn').classList.add('hidden');
-
-            // 渲染 4 個選項
-            const optsContainer = document.getElementById('quiz-options');
-            optsContainer.innerHTML = '';
-
-            q.options.forEach(optText => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-medium text-sm text-slate-700 transition flex items-center justify-between";
-                btn.innerHTML = `<span>${optText}</span> <i class="fa-regular fa-circle text-slate-300"></i>`;
-                btn.onclick = () => handleQuizAnswer(optText, btn);
-                optsContainer.appendChild(btn);
-            });
-        }
-
-        function handleQuizAnswer(selectedOption, clickedBtn) {
-            const q = quizQuestions[quizCurrentIndex];
-            const isCorrect = (selectedOption === q.target.chinese);
-            q.userAnswer = selectedOption;
-            q.isCorrect = isCorrect;
-
-            // 鎖定所有選項按鈕
-            const allBtns = document.getElementById('quiz-options').querySelectorAll('button');
-            allBtns.forEach(btn => {
-                btn.disabled = true;
-                const optText = btn.querySelector('span').textContent;
-                if (optText === q.target.chinese) {
-                    btn.classList.remove('border-slate-200', 'bg-white');
-                    btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
-                    btn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600";
-                } else if (btn === clickedBtn && !isCorrect) {
-                    btn.classList.remove('border-slate-200', 'bg-white');
-                    btn.classList.add('border-rose-400', 'bg-rose-50', 'text-rose-800');
-                    btn.querySelector('i').className = "fa-solid fa-circle-xmark text-rose-500";
-                }
-            });
-
-            // 顯示反饋
-            const fbBox = document.getElementById('quiz-feedback');
-            const fbText = document.getElementById('feedback-text');
-            const fbEx = document.getElementById('feedback-example');
-            fbBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-rose-50', 'text-rose-800');
-
-            if (isCorrect) {
-                quizScore += 1;
-                recordMasteredWord(q.target.word);
-                fbBox.classList.add('bg-emerald-50', 'text-emerald-800');
-                fbText.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-600"></i> 正確！答得很好。';
-            } else {
-                quizMistakes.push(q.target);
-                fbBox.classList.add('bg-rose-50', 'text-rose-800');
-                fbText.innerHTML = `<i class="fa-solid fa-xmark mr-1 text-rose-600"></i> 答錯了！正確答案是：<strong>${q.target.chinese}</strong>`;
-            }
-            fbEx.textContent = `例句: "${q.target.example}"`;
-
-            document.getElementById('quiz-score-badge').textContent = `得分: ${quizScore}`;
-            document.getElementById('quiz-next-btn').classList.remove('hidden');
-        }
-
-        function showQuizResult() {
-            document.getElementById('quiz-active-card').classList.add('hidden');
-            const resCard = document.getElementById('quiz-result-card');
-            resCard.classList.remove('hidden');
-
-            document.getElementById('result-score').textContent = quizScore;
-
-            // 紀錄歷史最高分
-            const curBest = parseInt(localStorage.getItem('cambridge_best_score') || '0', 10);
-            if (quizScore > curBest) {
-                localStorage.setItem('cambridge_best_score', quizScore);
-                document.getElementById('best-score').textContent = quizScore;
-            }
-
-            // 錯題清單
-            const mistakesBox = document.getElementById('result-review-box');
-            const mistakesList = document.getElementById('result-mistakes');
-            mistakesList.innerHTML = '';
-
-            if (quizMistakes.length > 0) {
-                mistakesBox.classList.remove('hidden');
-                quizMistakes.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <span class="font-bold text-slate-800 text-sm">${item.word}</span>
-                            <span class="text-slate-400 font-mono">(${item.pos})</span>
-                            <span class="text-indigo-600 font-medium ml-2">${item.chinese}</span>
-                        </div>
-                        <button onclick="speakWord('${item.word}')" class="text-slate-400 hover:text-indigo-600">
-                            <i class="fa-solid fa-volume-high"></i>
-                        </button>
-                    `;
-                    mistakesList.appendChild(div);
-                });
-            } else {
-                mistakesBox.classList.add('hidden');
-            }
-        }
-
-        function recordMasteredWord(word) {
-            let mastered = localStorage.getItem('cambridge_mastered_words') ? JSON.parse(localStorage.getItem('cambridge_mastered_words')) : [];
-            if (!mastered.includes(word)) {
-                mastered.push(word);
-                localStorage.setItem('cambridge_mastered_words', JSON.stringify(mastered));
-                document.getElementById('mastered-count').textContent = mastered.length;
-            }
-        }
-
-        // ==========================================
-        // 4. 發音與連續朗讀 (Speech Synthesis)
-        // ==========================================
-        function speakWord(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(text);
-                utter.lang = 'en-GB'; // 劍橋英式發音
-                utter.rate = 0.9;
-                window.speechSynthesis.speak(utter);
-            }
-        }
-
-        function playBatchAudioSequentially() {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
-            let idx = 0;
-            function playNext() {
-                if (idx < currentBatch.length) {
-                    const utter = new SpeechSynthesisUtterance(currentBatch[idx].word);
-                    utter.lang = 'en-GB';
-                    utter.rate = 0.85;
-                    utter.onend = () => {
-                        idx++;
-                        setTimeout(playNext, 600);
-                    };
-                    window.speechSynthesis.speak(utter);
-                }
-            }
-            playNext();
-        }
-
-        // ==========================================
-        // 事件監聽與切換
-        // ==========================================
-        function setupEventListeners() {
-            // 切換批次
-            document.getElementById('btn-new-batch').addEventListener('click', () => {
-                batchCounter++;
-                generateNewBatch();
-            });
-
-            document.getElementById('btn-next-batch').addEventListener('click', () => {
-                batchCounter++;
-                generateNewBatch();
-            });
-
-            document.getElementById('btn-listen-all').addEventListener('click', playBatchAudioSequentially);
-
-            // 搜尋過濾
-            document.getElementById('filter-input').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase().trim();
-                const filtered = currentBatch.filter(w => 
-                    w.word.toLowerCase().includes(term) || 
-                    w.chinese.includes(term) ||
-                    w.pos.toLowerCase().includes(term)
-                );
-                renderTable(filtered);
-            });
-
-            // 翻牌卡片翻轉
-            document.getElementById('flashcard').addEventListener('click', function() {
-                this.classList.toggle('flipped');
-            });
-
-            document.getElementById('card-prev').addEventListener('click', () => {
-                if (currentCardIdx > 0) {
-                    currentCardIdx--;
-                    updateCardDisplay();
-                }
-            });
-
-            document.getElementById('card-next').addEventListener('click', () => {
-                if (currentCardIdx < currentBatch.length - 1) {
-                    currentCardIdx++;
-                    updateCardDisplay();
-                }
-            });
-
-            // 測驗下一題
-            document.getElementById('quiz-next-btn').addEventListener('click', () => {
-                if (quizCurrentIndex < 19) {
-                    quizCurrentIndex++;
-                    loadQuizQuestion(quizCurrentIndex);
-                } else {
-                    document.getElementById('quiz-progress-bar').style.width = '100%';
-                    showQuizResult();
-                }
-            });
-
-            document.getElementById('btn-quiz-retry').addEventListener('click', resetQuiz);
-            document.getElementById('btn-quiz-new-batch').addEventListener('click', () => {
-                batchCounter++;
-                generateNewBatch();
-                resetQuiz();
-            });
-
-            // 頁籤切換
-            const tabList = document.getElementById('tab-list');
-            const tabCards = document.getElementById('tab-cards');
-            const tabQuiz = document.getElementById('tab-quiz');
-
-            const viewList = document.getElementById('view-list');
-            const viewCards = document.getElementById('view-cards');
-            const viewQuiz = document.getElementById('view-quiz');
-
-            function switchTab(activeTab, activeView) {
-                [tabList, tabCards, tabQuiz].forEach(t => {
-                    t.classList.remove('border-indigo-600', 'text-indigo-600');
-                    t.classList.add('border-transparent', 'text-slate-500');
-                });
-                activeTab.classList.add('border-indigo-600', 'text-indigo-600');
-                activeTab.classList.remove('border-transparent', 'text-slate-500');
-
-                [viewList, viewCards, viewQuiz].forEach(v => v.classList.add('hidden'));
-                activeView.classList.remove('hidden');
-            }
-
-            tabList.addEventListener('click', () => switchTab(tabList, viewList));
-            tabCards.addEventListener('click', () => switchTab(tabCards, viewCards));
-            tabQuiz.addEventListener('click', () => switchTab(tabQuiz, viewQuiz));
-        }
-    </script>
-</body>
-</html>
+        // ==============================================================
+        // 跨 A-Z 全 26 字母官方 B1 核心單字庫 (精選高頻且均勻
