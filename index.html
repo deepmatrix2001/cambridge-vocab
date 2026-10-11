@@ -9,7 +9,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        /* 翻牌卡動態視覺 */
         .card-flip { perspective: 1000px; }
         .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .card-flip.flipped .card-inner { transform: rotateY(180deg); }
@@ -31,7 +30,6 @@
                 margin: 0 !important;
                 padding: 0 !important;
             }
-            /* 隱藏網頁按鈕與非列印元件 */
             nav, footer, .no-print, button, #filter-box, #view-cards, #view-quiz, .tabs-container {
                 display: none !important;
             }
@@ -42,7 +40,6 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            /* 列印專屬表頭：學生姓名、日期、成績 */
             .print-header-area {
                 display: block !important;
                 margin-bottom: 15px;
@@ -66,7 +63,6 @@
                 font-weight: 800 !important;
                 text-align: center !important;
             }
-            /* 單字、中文、例句大字體規範 */
             .print-word {
                 font-size: 16pt !important;
                 font-weight: 800 !important;
@@ -94,7 +90,6 @@
                 color: #222222 !important;
                 font-style: italic !important;
             }
-            /* 避免換頁時單字行被腰斬 */
             tr {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -104,20 +99,20 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- 導覽列 (列印時隱藏) -->
+    <!-- 導覽列 -->
     <nav class="bg-indigo-700 text-white shadow-md sticky top-0 z-50 no-print">
         <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
                 <span class="text-2xl">📝</span>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Cambridge B1 Vocab</h1>
-                    <p class="text-xs text-indigo-200">劍橋英檢 2025 官方單字庫 (跨 A-Z 全庫隨機)</p>
+                    <p class="text-xs text-indigo-200">劍橋英檢 2025 官方單字庫 (跨 A-Z 全庫真隨機)</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-4 text-sm bg-indigo-800/80 px-4 py-1.5 rounded-full border border-indigo-600">
                 <div class="flex items-center gap-2">
-                    <span class="text-indigo-300">字庫總量:</span>
+                    <span class="text-indigo-300">字庫收錄:</span>
                     <span id="total-vocab-pool" class="font-bold text-yellow-300 text-base">0</span>
                     <span class="text-indigo-300">字</span>
                 </div>
@@ -134,7 +129,7 @@
     <!-- 主內容區 -->
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
         
-        <!-- 列印專屬表頭 (螢幕隱藏，列印時自動出現) -->
+        <!-- 列印專屬表頭 -->
         <div class="print-header-area hidden">
             <div class="flex justify-between items-end">
                 <div>
@@ -149,7 +144,7 @@
             </div>
         </div>
 
-        <!-- 批次資訊橫幅 (列印時隱藏) -->
+        <!-- 批次資訊橫幅 -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 no-print">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -189,7 +184,7 @@
             </div>
         </div>
 
-        <!-- 視圖 1: 單字列表 (Table View) -->
+        <!-- 視圖 1: 單字列表 -->
         <section id="view-list" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div id="filter-box" class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/60 no-print">
                 <div class="text-sm font-semibold text-slate-600">
@@ -219,7 +214,7 @@
             </div>
         </section>
 
-        <!-- 視圖 2: 記憶翻牌卡模式 (Flashcards) -->
+        <!-- 視圖 2: 記憶翻牌卡模式 -->
         <section id="view-cards" class="hidden no-print max-w-xl mx-auto">
             <div class="flex justify-between items-center mb-4">
                 <div class="text-sm text-slate-600 font-semibold">
@@ -271,7 +266,7 @@
             </div>
         </section>
 
-        <!-- 視圖 3: 測驗模式 (Quiz) -->
+        <!-- 視圖 3: 測驗模式 -->
         <section id="view-quiz" class="hidden no-print max-w-2xl mx-auto">
             <div id="quiz-active-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
                 <div class="flex justify-between items-center mb-4">
@@ -344,251 +339,736 @@
 
     </main>
 
-    <!-- 頁尾 (列印時隱藏) -->
+    <!-- 頁尾 -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 no-print">
-        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition • 方案 B 單檔完整版
+        Cambridge B1 Preliminary (PET) Vocabulary List • 2025 Revised Edition • 完整單檔極速版
     </footer>
 
-    <!-- 內建完整 A-Z 中英對照資料庫與控制邏輯 -->
+    <!-- 內建完整 A-Z 中英對照資料庫與核心控制腳本 -->
     <script>
-        // ==============================================================
-        // 方案 B：擴充後的完整 A-Z 中英對照核心字庫
-        // ==============================================================
-        const VOCAB_DATABASE = [
+        // 緊湊格式中英資料庫 [單字, 詞性, 中文, 例句]
+        const RAW_DATA = [
             // A
-            { w: "ability", p: "n.", c: "能力；才幹", ex: "She has the ability to speak three languages fluently." },
-            { w: "acceptable", p: "adj.", c: "可接受的；令人滿意的", ex: "We need to agree on an acceptable solution for everyone." },
-            { w: "access", p: "n.", c: "使用權；通道；存取", ex: "Students have easy access to the digital library." },
-            { w: "accompany", p: "v.", c: "陪同；伴隨", ex: "Children must be accompanied by an adult." },
-            { w: "accurate", p: "adj.", c: "準確的；精確的", ex: "Her description of the accident was very accurate." },
-            { w: "achieve", p: "v.", c: "達成；實現", ex: "She worked hard to achieve her goal of becoming a doctor." },
-            { w: "admire", p: "v.", c: "欽佩；讚賞", ex: "I really admire people who can speak multiple languages." },
-            { w: "advantage", p: "n.", c: "優點；優勢", ex: "One advantage of living near school is saving travel time." },
-            { w: "afford", p: "v.", c: "負擔得起；買得起", ex: "We cannot afford to waste any more time on this." },
-            { w: "anniversary", p: "n.", c: "週年紀念日", ex: "They celebrated their tenth wedding anniversary yesterday." },
-            { w: "apologise", p: "v.", c: "道歉；致歉", ex: "You should apologise to your sister for breaking her toy." },
-            { w: "appearance", p: "n.", c: "外觀；外貌；出現", ex: "Never judge someone solely by their appearance." },
-            { w: "appointment", p: "n.", c: "預約；約定", ex: "I made an appointment with the dentist for tomorrow morning." },
-            { w: "architect", p: "n.", c: "建築師", ex: "The architect designed a modern and eco-friendly school." },
-            { w: "atmosphere", p: "n.", c: "氣氛；大氣層", ex: "The coffee shop has a warm and relaxing atmosphere." },
-            { w: "available", p: "adj.", c: "可獲得的；有空的", ex: "Are there any single rooms available for this weekend?" },
-            { w: "avoid", p: "v.", c: "避免；避開", ex: "Take the bypass road to avoid heavy downtown traffic." },
-
+            ["ability","n.","能力；才能","She has the ability to speak three languages fluently."],
+            ["acceptable","adj.","可接受的；令人滿意的","We need to agree on an acceptable solution for everyone."],
+            ["access","n.","使用權；通道；存取","Students have easy access to the digital library."],
+            ["accompany","v.","陪同；伴隨","Children must be accompanied by an adult."],
+            ["accurate","adj.","準確的；精確的","Her description of the accident was very accurate."],
+            ["achieve","v.","達成；實現","She worked hard to achieve her goal of becoming a doctor."],
+            ["admire","v.","欽佩；讚賞","I really admire people who can speak multiple languages."],
+            ["advantage","n.","優點；優勢","One advantage of living near school is saving travel time."],
+            ["adventure","n.","冒險；奇遇","Traveling alone across the country was an exciting adventure."],
+            ["advertise","v.","做廣告；宣傳","They decided to advertise their new product online."],
+            ["afford","v.","負擔得起；買得起","We cannot afford to waste any more time on this."],
+            ["ahead","adv.","在前面；提前","You need to plan ahead to book cheap tickets."],
+            ["ambition","n.","抱負；志向","His ambition is to study engineering at university."],
+            ["ancient","adj.","古代的；古老的","The ancient castle was built over five centuries ago."],
+            ["anniversary","n.","週年紀念日","They celebrated their tenth wedding anniversary yesterday."],
+            ["announce","v.","宣布；宣告","The headteacher will announce the winners this afternoon."],
+            ["apologise","v.","道歉；致歉","You should apologise to your sister for breaking her toy."],
+            ["appearance","n.","外觀；外貌；出現","Never judge someone solely by their appearance."],
+            ["application","n.","申請表；應用軟體","Please complete the application form and send it in."],
+            ["appointment","n.","預約；約定","I made an appointment with the dentist for tomorrow morning."],
+            ["architect","n.","建築師","The architect designed a modern and eco-friendly school."],
+            ["atmosphere","n.","氣氛；大氣層","The coffee shop has a warm and relaxing atmosphere."],
+            ["attractive","adj.","有吸引力的；迷人的","The museum offers an attractive discount for students."],
+            ["available","adj.","可獲得的；有空的","Are there any single rooms available for this weekend?"],
+            ["avoid","v.","避免；避開","Take the bypass road to avoid heavy downtown traffic."],
             // B
-            { w: "background", p: "n.", c: "背景；經歷", ex: "She comes from a musical background and plays violin." },
-            { w: "bargain", p: "n. & v.", c: "特價商品；討價還價", ex: "At only five pounds, this warm jacket was a real bargain." },
-            { w: "behave", p: "v.", c: "舉止得體；守規矩", ex: "The children behaved very politely during the museum visit." },
-            { w: "benefit", p: "n. & v.", c: "好處；益處；受惠", ex: "Regular exercise brings numerous benefits to health." },
-            { w: "bestseller", p: "n.", c: "暢銷書；熱銷品", ex: "Her detective novel quickly became an international bestseller." },
-            { w: "bitter", p: "adj.", c: "苦的；嚴寒的", ex: "Dark chocolate often has a pleasantly bitter flavor." },
-            { w: "blame", p: "v. & n.", c: "責怪；歸咎於", ex: "Don't blame yourself for something you couldn't control." },
-            { w: "boarding pass", p: "n.", c: "登機證", ex: "Please have your passport and boarding pass ready." },
-            { w: "bother", p: "v.", c: "打擾；煩擾；費心", ex: "Sorry to bother you, but do you know what time it is?" },
-            { w: "breathe", p: "v.", c: "呼吸", ex: "Take a deep breath and breathe out slowly to relax." },
-            { w: "brilliant", p: "adj.", c: "傑出的；出色的", ex: "That was a brilliant idea for our class science project." },
-            { w: "brochure", p: "n.", c: "宣傳冊；手冊", ex: "The travel agent gave us a brochure about tours in Japan." },
-
+            ["background","n.","背景；經歷","She comes from a musical background and plays violin."],
+            ["backpack","n.","背包","Put your notebook and water into your backpack."],
+            ["bandage","n.","繃帶","The nurse wrapped a clean bandage around his sprained wrist."],
+            ["bargain","n. & v.","特價商品；討價還價","At only five pounds, this warm jacket was a real bargain."],
+            ["behave","v.","舉止得體；守規矩","The children behaved very politely during the museum visit."],
+            ["benefit","n. & v.","好處；益處；受惠","Regular exercise brings numerous benefits to health."],
+            ["bestseller","n.","暢銷書；熱銷品","Her detective novel quickly became an international bestseller."],
+            ["bitter","adj.","苦的；嚴寒的","Dark chocolate often has a pleasantly bitter flavor."],
+            ["blame","v. & n.","責怪；歸咎於","Don't blame yourself for something you couldn't control."],
+            ["boarding pass","n.","登機證","Please have your passport and boarding pass ready."],
+            ["bother","v.","打擾；煩擾；費心","Sorry to bother you, but do you know what time it is?"],
+            ["brave","adj.","勇敢的","The brave firefighter rescued the cat from the tall tree."],
+            ["breathe","v.","呼吸","Take a deep breath and breathe out slowly to relax."],
+            ["breeze","n.","微風","A gentle breeze blew across the sunny beach."],
+            ["brilliant","adj.","傑出的；出色的","That was a brilliant idea for our class science project."],
+            ["brochure","n.","宣傳冊；手冊","The travel agent gave us a brochure about tours in Japan."],
             // C
-            { w: "calculate", p: "v.", c: "計算；估計", ex: "Use this formula to calculate the total cost of the trip." },
-            { w: "campsite", p: "n.", c: "露營區；營地", ex: "We pitched our tents at a scenic campsite near the lake." },
-            { w: "candidate", p: "n.", c: "應試者；候選人", ex: "Each candidate must show their ID before the exam begins." },
-            { w: "career", p: "n.", c: "職業生涯；事業", ex: "She is planning a career in international journalism." },
-            { w: "careless", p: "adj.", c: "粗心的；馬虎的", ex: "He lost points because of a careless spelling mistake." },
-            { w: "celebrity", p: "n.", c: "名人；明星", ex: "The charity concert was attended by several famous celebrities." },
-            { w: "ceremony", p: "n.", c: "典禮；儀式", ex: "The graduation ceremony will take place in the school hall." },
-            { w: "certificate", p: "n.", c: "證書；證明", ex: "You will receive an official certificate after finishing the course." },
-            { w: "challenge", p: "n. & v.", c: "挑戰；質疑", ex: "Learning a new language is a challenge, but very rewarding." },
-            { w: "charity", p: "n.", c: "慈善機構；善行", ex: "The marathon raised thousands of dollars for an animal charity." },
-            { w: "cheerful", p: "adj.", c: "開朗的；令人愉快的", ex: "Her cheerful smile always brightens up the classroom." },
-            { w: "climate change", p: "n.", c: "氣候變遷", ex: "Countries met to discuss urgent solutions for climate change." },
-            { w: "colleague", p: "n.", c: "同事", ex: "She discussed the new project proposal with her colleagues." },
-            { w: "comfortable", p: "adj.", c: "舒適的；自在的", ex: "These walking shoes are very comfortable for sightseeing." },
-            { w: "communicate", p: "v.", c: "溝通；交流", ex: "Email and video calls make it easy to communicate globally." },
-            { w: "compete", p: "v.", c: "競爭；參加比賽", ex: "Athletes from forty countries came to compete in the games." },
-            { w: "complain", p: "v.", c: "抱怨；投訴", ex: "Customers complained about the slow service at the restaurant." },
-            { w: "concentrate", p: "v.", c: "專注；集中精神", ex: "It is hard to concentrate when people are talking loudly." },
-            { w: "confident", p: "adj.", c: "有信心的；自信的", ex: "With steady practice, you will feel confident during the test." },
-            { w: "confirm", p: "v.", c: "確認；證實", ex: "Please call the hotel to confirm your room reservation." },
-            { w: "convenient", p: "adj.", c: "方便的；便利的", ex: "Living next to the train station is extremely convenient." },
-            { w: "courage", p: "n.", c: "勇氣；膽量", ex: "It takes courage to speak in public in another language." },
-            { w: "creative", p: "adj.", c: "有創意的；創造力的", ex: "The students came up with creative ways to recycle plastic." },
-            { w: "crowded", p: "adj.", c: "擁擠的", ex: "The night market is always crowded with tourists on weekends." },
-            { w: "curious", p: "adj.", c: "好奇的", ex: "Children are naturally curious about the world around them." },
-
+            ["calculate","v.","計算；估計","Use this formula to calculate the total cost of the trip."],
+            ["campsite","n.","露營區；營地","We pitched our tents at a scenic campsite near the lake."],
+            ["candidate","n.","應試者；候選人","Each candidate must show their ID before the exam begins."],
+            ["career","n.","職業生涯；事業","She is planning a career in international journalism."],
+            ["careless","adj.","粗心的；馬虎的","He lost points because of a careless spelling mistake."],
+            ["celebrity","n.","名人；明星","The charity concert was attended by several famous celebrities."],
+            ["ceremony","n.","典禮；儀式","The graduation ceremony will take place in the school hall."],
+            ["certificate","n.","證書；證明","You will receive an official certificate after finishing the course."],
+            ["challenge","n. & v.","挑戰；質疑","Learning a new language is a challenge, but very rewarding."],
+            ["charity","n.","慈善機構；善行","The marathon raised thousands of dollars for an animal charity."],
+            ["cheerful","adj.","開朗的；令人愉快的","Her cheerful smile always brightens up the classroom."],
+            ["climate change","n.","氣候變遷","Countries met to discuss urgent solutions for climate change."],
+            ["colleague","n.","同事","She discussed the new project proposal with her colleagues."],
+            ["comfortable","adj.","舒適的；自在的","These walking shoes are very comfortable for sightseeing."],
+            ["communicate","v.","溝通；交流","Email and video calls make it easy to communicate globally."],
+            ["compete","v.","競爭；參加比賽","Athletes from forty countries came to compete in the games."],
+            ["complain","v.","抱怨；投訴","Customers complained about the slow service at the restaurant."],
+            ["concentrate","v.","專注；集中精神","It is hard to concentrate when people are talking loudly."],
+            ["confident","adj.","有信心的；自信的","With steady practice, you will feel confident during the test."],
+            ["confirm","v.","確認；證實","Please call the hotel to confirm your room reservation."],
+            ["convenient","adj.","方便的；便利的","Living next to the train station is extremely convenient."],
+            ["courage","n.","勇氣；膽量","It takes courage to speak in public in another language."],
+            ["creative","adj.","有創意的；創造力的","The students came up with creative ways to recycle plastic."],
+            ["crowded","adj.","擁擠的","The night market is always crowded with tourists on weekends."],
+            ["curious","adj.","好奇的","Children are naturally curious about the world around them."],
             // D
-            { w: "damage", p: "n. & v.", c: "損害；毀壞", ex: "The storm caused extensive damage to coastal buildings." },
-            { w: "decision", p: "n.", c: "決定；抉擇", ex: "Making the decision to study overseas required careful thought." },
-            { w: "decrease", p: "v. & n.", c: "減少；降低", ex: "Traffic accidents decreased after the new speed limit was set." },
-            { w: "defeat", p: "v. & n.", c: "擊敗；挫敗", ex: "Our team defeated the defending champions in the final." },
-            { w: "definitely", p: "adv.", c: "肯定地；毫無疑問", ex: "I will definitely recommend this novel to my friends." },
-            { w: "delay", p: "n. & v.", c: "耽擱；延誤", ex: "We apologize for the flight delay caused by heavy fog." },
-            { w: "delicious", p: "adj.", c: "美味的；可口的", ex: "My grandmother baked a delicious apple tart for dessert." },
-            { w: "delighted", p: "adj.", c: "非常高興的；欣喜的", ex: "She was delighted to receive the first prize in art." },
-            { w: "delivery", p: "n.", c: "運送；遞送", ex: "Free home delivery is provided for orders over fifty dollars." },
-            { w: "departure", p: "n.", c: "出發；離開", ex: "Passengers should check the screen for flight departure times." },
-            { w: "destination", p: "n.", c: "目的地", ex: "Kyoto is one of the most popular travel destinations in Japan." },
-            { w: "destroy", p: "v.", c: "摧毀；破壞", ex: "The fire destroyed the historic wooden warehouse completely." },
-            { w: "difficulty", p: "n.", c: "困難；困境", ex: "If you have any difficulty understanding, please ask the teacher." },
-            { w: "disappointed", p: "adj.", c: "感到失望的", ex: "He was disappointed that the outdoor concert was cancelled." },
-            { w: "discount", p: "n.", c: "折扣；優惠", ex: "Students receive a 20 percent discount on entrance tickets." },
-            { w: "discover", p: "v.", c: "發現；發覺", ex: "Scientists discovered a new species of frog in the forest." },
-            { w: "disturb", p: "v.", c: "打擾；干擾", ex: "Please do not disturb him while he is preparing for the exam." },
-            { w: "documentary", p: "n.", c: "紀錄片", ex: "We watched an inspiring documentary about ocean wildlife." },
-            { w: "doubt", p: "n. & v.", c: "懷疑；不確定", ex: "There is no doubt that regular vocabulary review helps." },
-
+            ["damage","n. & v.","損害；毀壞","The storm caused extensive damage to coastal buildings."],
+            ["decision","n.","決定；抉擇","Making the decision to study overseas required careful thought."],
+            ["decrease","v. & n.","減少；降低","Traffic accidents decreased after the new speed limit was set."],
+            ["defeat","v. & n.","擊敗；挫敗","Our team defeated the defending champions in the final."],
+            ["definitely","adv.","肯定地；毫無疑問","I will definitely recommend this novel to my friends."],
+            ["delay","n. & v.","耽擱；延誤","We apologize for the flight delay caused by heavy fog."],
+            ["delicious","adj.","美味的；可口的","My grandmother baked a delicious apple tart for dessert."],
+            ["delighted","adj.","非常高興的；欣喜的","She was delighted to receive the first prize in art."],
+            ["delivery","n.","運送；遞送","Free home delivery is provided for orders over fifty dollars."],
+            ["departure","n.","出發；離開","Passengers should check the screen for flight departure times."],
+            ["destination","n.","目的地","Kyoto is one of the most popular travel destinations in Japan."],
+            ["destroy","v.","摧毀；破壞","The fire destroyed the historic wooden warehouse completely."],
+            ["difficulty","n.","困難；困境","If you have any difficulty understanding, please ask the teacher."],
+            ["disappointed","adj.","感到失望的","He was disappointed that the outdoor concert was cancelled."],
+            ["discount","n.","折扣；優惠","Students receive a 20 percent discount on entrance tickets."],
+            ["discover","v.","發現；發覺","Scientists discovered a new species of frog in the forest."],
+            ["disturb","v.","打擾；干擾","Please do not disturb him while he is preparing for the exam."],
+            ["documentary","n.","紀錄片","We watched an inspiring documentary about ocean wildlife."],
+            ["doubt","n. & v.","懷疑；不確定","There is no doubt that regular vocabulary review helps."],
             // E
-            { w: "education", p: "n.", c: "教育", ex: "Good education provides valuable opportunities for young people." },
-            { w: "effective", p: "adj.", c: "有效的", ex: "Flashcards are an effective tool for memorizing vocabulary." },
-            { w: "efficient", p: "adj.", c: "高效率的", ex: "The high-speed rail is both fast and energy-efficient." },
-            { w: "elderly", p: "adj.", c: "年長的；長者", ex: "You should always offer your bus seat to elderly passengers." },
-            { w: "embarrassed", p: "adj.", c: "尷尬的；難為情的", ex: "I felt embarrassed when my phone rang loudly during the test." },
-            { w: "emergency", p: "n.", c: "緊急狀況；突發事件", ex: "Dial 119 immediately in case of a medical emergency." },
-            { w: "employee", p: "n.", c: "員工；雇員", ex: "The tech company employs over two hundred skilled workers." },
-            { w: "encourage", p: "v.", c: "鼓勵；激勵", ex: "My parents always encourage me to try my best." },
-            { w: "energy", p: "n.", c: "精力；活力；能源", ex: "A healthy breakfast gives you energy for the entire morning." },
-            { w: "engineer", p: "n.", c: "工程師", ex: "Civil engineers designed the long suspension bridge." },
-            { w: "enormous", p: "adj.", c: "巨大的；龐大的", ex: "An enormous passenger cruise ship arrived in the harbor." },
-            { w: "entertainment", p: "n.", c: "娛樂；消遣", ex: "The city center offers plenty of evening entertainment." },
-            { w: "environment", p: "n.", c: "環境；自然界", ex: "We need to reduce single-use plastic to protect our environment." },
-            { w: "essential", p: "adj.", c: "必不可少的；極重要的", ex: "Adequate sleep is essential for physical and mental health." },
-            { w: "evidence", p: "n.", c: "證據；跡象", ex: "The police collected crucial evidence from the scene." },
-            { w: "exhausted", p: "adj.", c: "筋疲力盡的", ex: "After finishing the full marathon, he was completely exhausted." },
-            { w: "exhibition", p: "n.", c: "展覽會；展示", ex: "There is an exhibition of ancient artifacts at the museum." },
-            { w: "expensive", p: "adj.", c: "昂貴的", ex: "Hotels in the city center can be quite expensive in peak season." },
-            { w: "experience", p: "n. & v.", c: "經驗；經歷", ex: "Volunteering at the hospital was an unforgettable experience." },
-            { w: "explain", p: "v.", c: "解釋；說明", ex: "Can you explain how this math formula works?" },
-            { w: "explore", p: "v.", c: "探索；勘查", ex: "We rented bikes to explore the traditional villages." },
-
+            ["education","n.","教育","Good education provides valuable opportunities for young people."],
+            ["effective","adj.","有效的","Flashcards are an effective tool for memorizing vocabulary."],
+            ["efficient","adj.","高效率的","The high-speed rail is both fast and energy-efficient."],
+            ["elderly","adj.","年長的；長者","You should always offer your bus seat to elderly passengers."],
+            ["embarrassed","adj.","尷尬的；難為情的","I felt embarrassed when my phone rang loudly during the test."],
+            ["emergency","n.","緊急狀況；突發事件","Dial 119 immediately in case of a medical emergency."],
+            ["employee","n.","員工；雇員","The tech company employs over two hundred skilled workers."],
+            ["encourage","v.","鼓勵；激勵","My parents always encourage me to try my best."],
+            ["energy","n.","精力；活力；能源","A healthy breakfast gives you energy for the entire morning."],
+            ["engineer","n.","工程師","Civil engineers designed the long suspension bridge."],
+            ["enormous","adj.","巨大的；龐大的","An enormous passenger cruise ship arrived in the harbor."],
+            ["entertainment","n.","娛樂；消遣","The city center offers plenty of evening entertainment."],
+            ["environment","n.","環境；自然界","We need to reduce single-use plastic to protect our environment."],
+            ["essential","adj.","必不可少的；極重要的","Adequate sleep is essential for physical and mental health."],
+            ["evidence","n.","證據；跡象","The police collected crucial evidence from the scene."],
+            ["exhausted","adj.","筋疲力盡的","After finishing the full marathon, he was completely exhausted."],
+            ["exhibition","n.","展覽會；展示","There is an exhibition of ancient artifacts at the museum."],
+            ["expensive","adj.","昂貴的","Hotels in the city center can be quite expensive in peak season."],
+            ["experience","n. & v.","經驗；經歷","Volunteering at the hospital was an unforgettable experience."],
+            ["explain","v.","解釋；說明","Can you explain how this math formula works?"],
+            ["explore","v.","探索；勘查","We rented bikes to explore the traditional villages."],
             // F
-            { w: "facility", p: "n.", c: "設施；設備", ex: "The sports center has excellent swimming and fitness facilities." },
-            { w: "familiar", p: "adj.", c: "熟悉的；通曉的", ex: "His face looked familiar, but I couldn't remember his name." },
-            { w: "famous", p: "adj.", c: "著名的；出名的", ex: "The bakery is famous for its handmade bitter caramel pudding." },
-            { w: "fascinating", p: "adj.", c: "迷人的；極有吸引力的", ex: "The lecture on space exploration was truly fascinating." },
-            { w: "fashionable", p: "adj.", c: "時髦的；流行的", ex: "She loves wearing fashionable yet comfortable clothing." },
-            { w: "favourite", p: "adj. & n.", c: "最喜愛的", ex: "Reading picture books is my daughter's favourite pastime." },
-            { w: "festival", p: "n.", c: "節日；音樂節", ex: "Thousands of music fans attended the outdoor summer festival." },
-            { w: "financial", p: "adj.", c: "財務的；金融的", ex: "They sought professional financial advice before buying a home." },
-            { w: "fluent", p: "adj.", c: "流利的", ex: "He is fluent in both English and Japanese." },
-            { w: "forecast", p: "n. & v.", c: "預測；天氣預報", ex: "Check the weather forecast before heading out for a hike." },
-            { w: "foreigner", p: "n.", c: "外國人", ex: "The city guidebook provides useful tips for foreigners." },
-            { w: "frequently", p: "adv.", c: "頻繁地；屢次", ex: "Buses run frequently between the airport and the train station." },
-            { w: "frightened", p: "adj.", c: "受驚嚇的；害怕的", ex: "The puppy was frightened by the loud thunderstorm." },
-            { w: "furniture", p: "n.", c: "家具", ex: "They bought wooden furniture for their new apartment." },
-
+            ["facility","n.","設施；設備","The sports center has excellent swimming and fitness facilities."],
+            ["familiar","adj.","熟悉的；通曉的","His face looked familiar, but I couldn't remember his name."],
+            ["famous","adj.","著名的；出名的","The bakery is famous for its handmade bitter caramel pudding."],
+            ["fascinating","adj.","迷人的；極有吸引力的","The lecture on space exploration was truly fascinating."],
+            ["fashionable","adj.","時髦的；流行的","She loves wearing fashionable yet comfortable clothing."],
+            ["favourite","adj. & n.","最喜愛的","Reading picture books is my daughter's favourite pastime."],
+            ["festival","n.","節日；音樂節","Thousands of music fans attended the outdoor summer festival."],
+            ["financial","adj.","財務的；金融的","They sought professional financial advice before buying a home."],
+            ["fluent","adj.","流利的","He is fluent in both English and Japanese."],
+            ["forecast","n. & v.","預測；天氣預報","Check the weather forecast before heading out for a hike."],
+            ["foreigner","n.","外國人","The city guidebook provides useful tips for foreigners."],
+            ["frequently","adv.","頻繁地；屢次","Buses run frequently between the airport and the train station."],
+            ["frightened","adj.","受驚嚇的；害怕的","The puppy was frightened by the loud thunderstorm."],
+            ["furniture","n.","家具","They bought wooden furniture for their new apartment."],
             // G
-            { w: "gallery", p: "n.", c: "藝廊；畫廊", ex: "The modern art gallery exhibits works by young local painters." },
-            { w: "generous", p: "adj.", c: "慷慨的；大方的", ex: "He made a generous donation to the children's hospital." },
-            { w: "geography", p: "n.", c: "地理學", ex: "In geography class, we learned about volcanoes and earthquakes." },
-            { w: "glance", p: "v. & n.", c: "瞥視；匆匆一看", ex: "He glanced at his watch to see if he was running late." },
-            { w: "gorgeous", p: "adj.", c: "極漂亮的；華麗的", ex: "We enjoyed a gorgeous sunset over the quiet harbor." },
-            { w: "government", p: "n.", c: "政府", ex: "The local government built a new public library in our district." },
-            { w: "gradually", p: "adv.", c: "逐漸地；逐步地", ex: "Her English listening improved gradually with daily practice." },
-            { w: "graduate", p: "v. & n.", c: "畢業；畢業生", ex: "She will graduate from university with a degree in design." },
-            { w: "grateful", p: "adj.", c: "感激的；感恩的", ex: "I am grateful for all the support my teachers gave me." },
-            { w: "guidebook", p: "n.", c: "旅遊指南；導覽手冊", ex: "The guidebook recommended several authentic local cafes." },
-            { w: "guilty", p: "adj.", c: "內疚的；有罪的", ex: "He felt guilty for forgetting his friend's birthday." },
-
+            ["gallery","n.","藝廊；畫廊","The modern art gallery exhibits works by young local painters."],
+            ["generous","adj.","慷慨的；大方的","He made a generous donation to the children's hospital."],
+            ["geography","n.","地理學","In geography class, we learned about volcanoes and earthquakes."],
+            ["glance","v. & n.","瞥視；匆匆一看","He glanced at his watch to see if he was running late."],
+            ["gorgeous","adj.","極漂亮的；華麗的","We enjoyed a gorgeous sunset over the quiet harbor."],
+            ["government","n.","政府","The local government built a new public library in our district."],
+            ["gradually","adv.","逐漸地；逐步地","Her English listening improved gradually with daily practice."],
+            ["graduate","v. & n.","畢業；畢業生","She will graduate from university with a degree in design."],
+            ["grateful","adj.","感激的；感恩的","I am grateful for all the support my teachers gave me."],
+            ["guidebook","n.","旅遊指南；導覽手冊","The guidebook recommended several authentic local cafes."],
+            ["guilty","adj.","內疚的；有罪的","He felt guilty for forgetting his friend's birthday."],
             // H
-            { w: "harbour", p: "n.", c: "港口；海港", ex: "Fishing boats return to the harbour early every morning." },
-            { w: "hardly", p: "adv.", c: "幾乎不；簡直不", ex: "The room was so noisy that I could hardly hear the speaker." },
-            { w: "headline", p: "n.", c: "新聞頭條", ex: "The newspaper headline announced the opening of the new subway." },
-            { w: "healthy", p: "adj.", c: "健康的", ex: "Eating fresh vegetables and sleeping well keeps you healthy." },
-            { w: "helicopter", p: "n.", c: "直升機", ex: "A rescue helicopter was sent to help the stranded climbers." },
-            { w: "historical", p: "adj.", c: "歷史的；史學的", ex: "This museum contains rare historical documents and maps." },
-            { w: "honest", p: "adj.", c: "誠實的；正直的", ex: "Being honest is always the best way to earn people's trust." },
-            { w: "horrible", p: "adj.", c: "可怕的；極糟的", ex: "The weather was horrible with freezing rain all afternoon." },
-            { w: "humid", p: "adj.", c: "潮濕的；濕熱的", ex: "Summers in Taiwan are usually very hot and humid." },
-            { w: "humour", p: "n.", c: "幽默；幽默感", ex: "The teacher has a great sense of humour that makes class fun." },
-
+            ["harbour","n.","港口；海港","Fishing boats return to the harbour early every morning."],
+            ["hardly","adv.","幾乎不；簡直不","The room was so noisy that I could hardly hear the speaker."],
+            ["headline","n.","新聞頭條","The newspaper headline announced the opening of the new subway."],
+            ["healthy","adj.","健康的","Eating fresh vegetables and sleeping well keeps you healthy."],
+            ["helicopter","n.","直升機","A rescue helicopter was sent to help the stranded climbers."],
+            ["historical","adj.","歷史的；史學的","This museum contains rare historical documents and maps."],
+            ["honest","adj.","誠實的；正直的","Being honest is always the best way to earn people's trust."],
+            ["horrible","adj.","可怕的；極糟的","The weather was horrible with freezing rain all afternoon."],
+            ["humid","adj.","潮濕的；濕熱的","Summers in Taiwan are usually very hot and humid."],
+            ["humour","n.","幽默；幽默感","The teacher has a great sense of humour that makes class fun."],
             // I
-            { w: "identify", p: "v.", c: "辨認；認出", ex: "Can you identify which of these keys belongs to the front door?" },
-            { w: "ignore", p: "v.", c: "忽視；不理睬", ex: "Never ignore the warning signs when driving in heavy rain." },
-            { w: "imagine", p: "v.", c: "想像；設想", ex: "Can you imagine what cities will look like in fifty years?" },
-            { w: "immediately", p: "adv.", c: "立刻；馬上", ex: "Please reply immediately so we can confirm the reservation." },
-            { w: "importance", p: "n.", c: "重要性", ex: "The speaker stressed the importance of protecting wild animals." },
-            { w: "impress", p: "v.", c: "給…留下深刻印象", ex: "Her fluent English pronunciation impressed all the examiners." },
-            { w: "improve", p: "v.", c: "改善；增進", ex: "Daily reading is the most effective way to improve your English." },
-            { w: "include", p: "v.", c: "包含；包括", ex: "The tour price includes hotel accommodation and breakfast." },
-            { w: "incredible", p: "adj.", c: "難以置信的；極棒的", ex: "The mountain view from the observation deck was incredible." },
-            { w: "independent", p: "adj.", c: "獨立的；自主的", ex: "Living in a dormitory helps teenagers become more independent." },
-            { w: "ingredient", p: "n.", c: "食材；原料", ex: "Fresh seasonal vegetables are the main ingredients of this soup." },
-            { w: "inspire", p: "v.", c: "啟發；激勵", ex: "The biography of the scientist inspired many young students." },
-            { w: "instructions", p: "n pl.", c: "指示；說明書", ex: "Read the assembly instructions carefully before putting it together." },
-            { w: "intelligent", p: "adj.", c: "聰穎的；有智慧的", ex: "Dolphins are known to be highly intelligent marine creatures." },
-            { w: "interview", p: "n. & v.", c: "面試；採訪", ex: "She prepared thoroughly for her university entrance interview." },
-            { w: "invitation", p: "n.", c: "邀請；請柬", ex: "We received a lovely wedding invitation in the mail yesterday." },
-
+            ["identify","v.","辨認；認出","Can you identify which of these keys belongs to the front door?"],
+            ["ignore","v.","忽視；不理睬","Never ignore the warning signs when driving in heavy rain."],
+            ["imagine","v.","想像；設想","Can you imagine what cities will look like in fifty years?"],
+            ["immediately","adv.","立刻；馬上","Please reply immediately so we can confirm the reservation."],
+            ["importance","n.","重要性","The speaker stressed the importance of protecting wild animals."],
+            ["impress","v.","給…留下深刻印象","Her fluent English pronunciation impressed all the examiners."],
+            ["improve","v.","改善；增進","Daily reading is the most effective way to improve your English."],
+            ["include","v.","包含；包括","The tour price includes hotel accommodation and breakfast."],
+            ["incredible","adj.","難以置信的；極棒的","The mountain view from the observation deck was incredible."],
+            ["independent","adj.","獨立的；自主的","Living in a dormitory helps teenagers become more independent."],
+            ["ingredient","n.","食材；原料","Fresh seasonal vegetables are the main ingredients of this soup."],
+            ["inspire","v.","啟發；激勵","The biography of the scientist inspired many young students."],
+            ["instructions","n pl.","指示；說明書","Read the assembly instructions carefully before putting it together."],
+            ["intelligent","adj.","聰穎的；有智慧的","Dolphins are known to be highly intelligent marine creatures."],
+            ["interview","n. & v.","面試；採訪","She prepared thoroughly for her university entrance interview."],
+            ["invitation","n.","邀請；請柬","We received a lovely wedding invitation in the mail yesterday."],
             // J
-            { w: "jealous", p: "adj.", c: "嫉妒的；羨慕的", ex: "He felt jealous when his classmate received the new smartphone." },
-            { w: "jewellery", p: "n.", c: "珠寶；首飾", ex: "She keeps her handmade silver jewellery in a wooden box." },
-            { w: "journalist", p: "n.", c: "新聞記者", ex: "The investigative journalist wrote an article about clean energy." },
-            { w: "journey", p: "n.", c: "旅行；旅程", ex: "Have a safe journey and remember to text us when you arrive!" },
-
+            ["jealous","adj.","嫉妒的；羨慕的","He felt jealous when his classmate received the new smartphone."],
+            ["jewellery","n.","珠寶；首飾","She keeps her handmade silver jewellery in a wooden box."],
+            ["journalist","n.","新聞記者","The investigative journalist wrote an article about clean energy."],
+            ["journey","n.","旅行；旅程","Have a safe journey and remember to text us when you arrive!"],
             // K
-            { w: "keen", p: "adj.", c: "熱衷的；渴望的", ex: "He is very keen on learning how to code mobile applications." },
-            { w: "keyboard", p: "n.", c: "鍵盤 (電腦/琴)", ex: "She plays the electronic keyboard in the school band." },
-            { w: "knowledge", p: "n.", c: "知識；學識", ex: "Traveling widens your perspective and enriches your knowledge." },
-
+            ["keen","adj.","熱衷的；渴望的","He is very keen on learning how to code mobile applications."],
+            ["keyboard","n.","鍵盤 (電腦/琴)","She plays the electronic keyboard in the school band."],
+            ["knowledge","n.","知識；學識","Traveling widens your perspective and enriches your knowledge."],
             // L
-            { w: "laboratory", p: "n.", c: "實驗室", ex: "Students must wear protective goggles inside the chemistry lab." },
-            { w: "landscape", p: "n.", c: "風景；景色", ex: "The train passed through rolling hills and stunning rural landscapes." },
-            { w: "language", p: "n.", c: "語言", ex: "Learning a foreign language connects you with different cultures." },
-            { w: "laundry", p: "n.", c: "待洗衣物；洗衣店", ex: "I need to do my laundry before packing for the weekend trip." },
-            { w: "lawyer", p: "n.", c: "律師", ex: "They consulted a lawyer before signing the rental contract." },
-            { w: "lecture", p: "n.", c: "演講；大學講座", ex: "The professor gave an insightful lecture on European history." },
-            { w: "leisure", p: "n.", c: "休閒；閒暇", ex: "What do you enjoy doing during your leisure time on weekends?" },
-            { w: "licence", p: "n.", c: "執照；許可證", ex: "You must carry your driver's licence whenever driving a car." },
-            { w: "location", p: "n.", c: "地點；位置", ex: "The hotel has an ideal location right across from the station." },
-            { w: "luggage", p: "n.", c: "行李", ex: "Make sure you attach a name tag to your checked luggage." },
-            { w: "luxury", p: "n. & adj.", c: "奢侈品；奢華的", ex: "Staying in a five-star resort was an unforgettable luxury." },
-
+            ["laboratory","n.","實驗室","Students must wear protective goggles inside the chemistry lab."],
+            ["landscape","n.","風景；景色","The train passed through rolling hills and stunning rural landscapes."],
+            ["language","n.","語言","Learning a foreign language connects you with different cultures."],
+            ["laundry","n.","待洗衣物；洗衣店","I need to do my laundry before packing for the weekend trip."],
+            ["lawyer","n.","律師","They consulted a lawyer before signing the rental contract."],
+            ["lecture","n.","演講；大學講座","The professor gave an insightful lecture on European history."],
+            ["leisure","n.","休閒；閒暇","What do you enjoy doing during your leisure time on weekends?"],
+            ["licence","n.","執照；許可證","You must carry your driver's licence whenever driving a car."],
+            ["location","n.","地點；位置","The hotel has an ideal location right across from the station."],
+            ["luggage","n.","行李","Make sure you attach a name tag to your checked luggage."],
+            ["luxury","n. & adj.","奢侈品；奢華的","Staying in a five-star resort was an unforgettable luxury."],
             // M
-            { w: "magnificent", p: "adj.", c: "壯麗的；極宏偉的", ex: "The castle on top of the hill offers a magnificent view." },
-            { w: "maintain", p: "v.", c: "維持；保養", ex: "It is important to maintain a healthy balance between study and play." },
-            { w: "manage", p: "v.", c: "管理；設法做到", ex: "She managed to finish the challenging assignment on time." },
-            { w: "material", p: "n.", c: "材料；原料", ex: "This warm winter jacket is made of water-resistant material." },
-            { w: "mechanic", p: "n.", c: "技工；機械師", ex: "The auto mechanic quickly diagnosed and repaired the car engine." },
-            { w: "medicine", p: "n.", c: "藥物；醫學", ex: "Take this medicine three times a day after meals." },
-            { w: "mention", p: "v.", c: "提及；說起", ex: "Did the teacher mention anything about tomorrow's spelling quiz?" },
-            { w: "miserable", p: "adj.", c: "痛苦的；可憐的", ex: "He felt miserable having to stay in bed with a high fever." },
-            { w: "modern", p: "adj.", c: "現代的；新式的", ex: "The newly renovated library features modern interactive displays." },
-            { w: "monument", p: "n.", c: "紀念碑；歷史遺跡", ex: "A marble monument was built in the town square to honour heroes." },
-            { w: "motorway", p: "n.", c: "高速公路", ex: "Driving on the motorway is faster than using ordinary city roads." },
-            { w: "musician", p: "n.", c: "音樂家；樂手", ex: "The talented street musician drew a huge gathering of tourists." },
-            { w: "mystery", p: "n.", c: "神秘事件；謎", ex: "The detective novel kept me guessing the mystery until the end." },
-
+            ["magnificent","adj.","壯麗的；極宏偉的","The castle on top of the hill offers a magnificent view."],
+            ["maintain","v.","維持；保養","It is important to maintain a healthy balance between study and play."],
+            ["manage","v.","管理；設法做到","She managed to finish the challenging assignment on time."],
+            ["material","n.","材料；原料","This warm winter jacket is made of water-resistant material."],
+            ["mechanic","n.","技工；機械師","The auto mechanic quickly diagnosed and repaired the car engine."],
+            ["medicine","n.","藥物；醫學","Take this medicine three times a day after meals."],
+            ["mention","v.","提及；說起","Did the teacher mention anything about tomorrow's spelling quiz?"],
+            ["miserable","adj.","痛苦的；可憐的","He felt miserable having to stay in bed with a high fever."],
+            ["modern","adj.","現代的；新式的","The newly renovated library features modern interactive displays."],
+            ["monument","n.","紀念碑；歷史遺跡","A marble monument was built in the town square to honour heroes."],
+            ["motorway","n.","高速公路","Driving on the motorway is faster than using ordinary city roads."],
+            ["musician","n.","音樂家；樂手","The talented street musician drew a huge gathering of tourists."],
+            ["mystery","n.","神秘事件；謎","The detective novel kept me guessing the mystery until the end."],
             // N
-            { w: "narrow", p: "adj.", c: "狹窄的", ex: "The old town has charming narrow streets paved with stone." },
-            { w: "necessary", p: "adj.", c: "必要的；不可少的", ex: "A valid passport is necessary for any international journey." },
-            { w: "negative", p: "adj.", c: "負面的；消極的", ex: "Try not to let negative thoughts discourage you from practicing." },
-            { w: "neighbourhood", p: "n.", c: "街坊；鄰近地區", ex: "There are lots of friendly cafes and bakeries in our neighbourhood." },
-            { w: "nervous", p: "adj.", c: "緊張的；擔憂的", ex: "It is natural to feel a little nervous before an important speech." },
-            { w: "nightmare", p: "n.", c: "惡夢；噩夢般的事", ex: "Traffic during Friday evening rush hour was an absolute nightmare." },
-            { w: "novelist", p: "n.", c: "小說家", ex: "The famous novelist spent five years writing this historical book." },
-
+            ["narrow","adj.","狹窄的","The old town has charming narrow streets paved with stone."],
+            ["necessary","adj.","必要的；不可少的","A valid passport is necessary for any international journey."],
+            ["negative","adj.","負面的；消極的","Try not to let negative thoughts discourage you from practicing."],
+            ["neighbourhood","n.","街坊；鄰近地區","There are lots of friendly cafes and bakeries in our neighbourhood."],
+            ["nervous","adj.","緊張的；擔憂的","It is natural to feel a little nervous before an important speech."],
+            ["nightmare","n.","惡夢；噩夢般的事","Traffic during Friday evening rush hour was an absolute nightmare."],
+            ["novelist","n.","小說家","The famous novelist spent five years writing this historical book."],
             // O
-            { w: "obvious", p: "adj.", c: "顯然的；明顯的", ex: "It was obvious from her smile that she had passed the test." },
-            { w: "occasion", p: "n.", c: "場合；特殊時刻", ex: "A graduation ceremony is always a joyful family occasion." },
-            { w: "occupation", p: "n.", c: "職業；職務", ex: "Please state your name, date of birth, and occupation on the form." },
-            { w: "opportunity", p: "n.", c: "機會；良機", ex: "Studying abroad provides a wonderful opportunity to grow." },
-            { w: "opposite", p: "prep. & adj.", c: "在…對面；相反的", ex: "The convenience store is located directly opposite the station." },
-            { w: "ordinary", p: "adj.", c: "一般的；尋常的", ex: "It looked like an ordinary stone, but it was actually a fossil." },
-            { w: "organise", p: "v.", c: "組織；籌辦", ex: "Our class committee will organise a charity food drive next week." },
-
+            ["obvious","adj.","顯然的；明顯的","It was obvious from her smile that she had passed the test."],
+            ["occasion","n.","場合；特殊時刻","A graduation ceremony is always a joyful family occasion."],
+            ["occupation","n.","職業；職務","Please state your name, date of birth, and occupation on the form."],
+            ["opportunity","n.","機會；良機","Studying abroad provides a wonderful opportunity to grow."],
+            ["opposite","prep. & adj.","在…對面；相反的","The convenience store is located directly opposite the station."],
+            ["ordinary","adj.","一般的；尋常的","It looked like an ordinary stone, but it was actually a fossil."],
+            ["organise","v.","組織；籌辦","Our class committee will organise a charity food drive next week."],
             // P
-            { w: "painful", p: "adj.", c: "疼痛的；令人痛苦的", ex: "He twisted his ankle while hiking, and it was quite painful." },
-            { w: "passenger", p: "n.", c: "乘客；旅客", ex: "All passengers are requested to fasten their seatbelts now." },
-            { w: "passport", p: "n.", c: "護照", ex: "Keep your passport in a secure pocket while traveling abroad." },
-            { w: "patient", p: "adj. & n.", c: "有耐心的；病人", ex: "Teachers need to be very patient with beginner language students." },
-            { w: "pedestrian", p: "n.", c: "行人", ex: "Drivers must yield to pedestrians at the zebra crossing." },
-            { w: "performance", p: "n.", c: "演出；表現", ex: "The ballet troupe gave a breathtaking performance last night." },
-            { w: "permission", p: "n.", c: "許可；准許", ex: "You must ask for your teacher's permission before leaving class." },
-            { w: "persuade", p: "v.", c: "說服；勸說", ex: "I tried to persuade my brother to join the school soccer team." },
-            { w: "pharmacy", p: "n.", c: "藥局；藥房", ex: "You can buy pain relievers and bandages at the corner pharmacy." },
-            { w: "pleasant", p: "adj.", c: "令人愉快的；宜人的", ex: "We enjoyed a pleasant stroll along the breezy beach." },
-            { w: "polite", p: "adj.", c: "有禮貌的；客氣的", ex: "It is always polite to say 'thank you' when receiving assistance." },
-            { w: "pollution", p: "n.", c: "污染", ex: "Electric vehicles help reduce air pollution in busy city centers." },
-            { w: "popular", p: "adj.", c: "受歡迎的；流行的", ex: "The retro pudding dessert is extremely popular with tourists." },
-            { w: "positive", p: "adj.", c: "積極的；正向的", ex: "Maintaining a positive attitude helps you overcome any challenge." },
-            { w: "postpone", p: "v.", c: "延期；推遲", ex: "The football match was postponed until next week due to rain." },
-            { w:
+            ["painful","adj.","疼痛的；令人痛苦的","He twisted his ankle while hiking, and it was quite painful."],
+            ["passenger","n.","乘客；旅客","All passengers are requested to fasten their seatbelts now."],
+            ["passport","n.","護照","Keep your passport in a secure pocket while traveling abroad."],
+            ["patient","adj. & n.","有耐心的；病人","Teachers need to be very patient with beginner language students."],
+            ["pedestrian","n.","行人","Drivers must yield to pedestrians at the zebra crossing."],
+            ["performance","n.","演出；表現","The ballet troupe gave a breathtaking performance last night."],
+            ["permission","n.","許可；准許","You must ask for your teacher's permission before leaving class."],
+            ["persuade","v.","說服；勸說","I tried to persuade my brother to join the school soccer team."],
+            ["pharmacy","n.","藥局；藥房","You can buy pain relievers and bandages at the corner pharmacy."],
+            ["pleasant","adj.","令人愉快的；宜人的","We enjoyed a pleasant stroll along the breezy beach."],
+            ["polite","adj.","有禮貌的；客氣的","It is always polite to say 'thank you' when receiving assistance."],
+            ["pollution","n.","污染","Electric vehicles help reduce air pollution in busy city centers."],
+            ["popular","adj.","受歡迎的；流行的","The retro pudding dessert is extremely popular with tourists."],
+            ["positive","adj.","積極的；正向的","Maintaining a positive attitude helps you overcome any challenge."],
+            ["postpone","v.","延期；推遲","The football match was postponed until next week due to rain."],
+            ["powerful","adj.","強大的；有力的","The telescope has a powerful lens that can view distant stars."],
+            ["predict","v.","預測；預言","Meteorologists use supercomputers to predict hurricane paths."],
+            ["preparation","n.","準備；預備","Proper preparation before the exam will boost your score."],
+            ["prevent","v.","防止；預防","Washing hands regularly is the best way to prevent spreading colds."],
+            ["previous","adj.","先前的；以往的","In my previous school, we had English lessons every single day."],
+            ["profession","n.","專業；職業","Teaching is considered a highly respected and noble profession."],
+            ["pronounce","v.","發音；讀音","Listen carefully to how native speakers pronounce this phrase."],
+            // Q
+            ["qualification","n.","資格；證照","She obtained a recognized teaching qualification last summer."],
+            ["quality","n.","品質；質地","We prioritize product quality and customer safety above all."],
+            ["quantity","n.","數量；分量","A large quantity of relief supplies arrived in the disaster area."],
+            ["queue","n. & v.","排隊；隊伍","People queued patiently outside the bakery for fresh croissants."],
+            ["quit","v.","放棄；停止；辭職","Never quit trying just because an assignment feels challenging."],
+            // R
+            ["realistic","adj.","務實的；逼真的","Set realistic learning goals so you can stay motivated every day."],
+            ["reasonable","adj.","合理的；講理的","The restaurant serves delicious pasta at very reasonable prices."],
+            ["receipt","n.","收據；發票","Keep your store receipt in case you want to exchange the shirt."],
+            ["recognise","v.","認出；承認","I did not recognise him at first because he had grown so tall."],
+            ["recommend","v.","推薦；建議","Can you recommend a good Italian restaurant in the city center."],
+            ["recover","v.","康復；恢復","It took him two weeks to fully recover from the flu."],
+            ["recycle","v.","回收利用","Our school encourages all students to recycle paper and cans."],
+            ["refuse","v.","拒絕","He politely refused the dessert because he was completely full."],
+            ["regularly","adv.","規律地；定期地","Exercising regularly helps maintain healthy heart function."],
+            ["reliable","adj.","可靠的；值得信賴的","The subway system in Tokyo is known for being extremely reliable."],
+            ["relieved","adj.","如釋重負的；寬慰的","We were relieved to hear that everyone arrived home safely."],
+            ["remind","v.","提醒","Please remind me to return the library books tomorrow afternoon."],
+            ["rescue","v. & n.","救援；營救","Firefighters managed to rescue the kitten from the tall tree."],
+            ["research","n. & v.","研究；調查","Scientists are conducting research on new clean energy sources."],
+            ["reservation","n.","預約；訂位","I made a dinner reservation for three people at seven o'clock."],
+            ["responsible","adj.","負責任的","Pet owners are responsible for taking good care of their animals."],
+            ["revise","v.","溫習；複習","Make sure you revise vocabulary words before the unit quiz."],
+            ["routine","n.","例行常規；日常慣例","Going for a morning jog has become part of my daily routine."],
+            // S
+            ["satisfied","adj.","滿意的；感到滿足的","The manager was pleased to see that all customers were satisfied."],
+            ["scenery","n.","風景；景色","The train ride through the countryside offered picturesque scenery."],
+            ["schedule","n. & v.","日程表；時間表","Check the conference schedule to see what time the talk starts."],
+            ["scientific","adj.","科學的","The experiment was carried out using strict scientific methods."],
+            ["security","n.","安全；保全","Airport security checks ensure the safety of all flight passengers."],
+            ["sensible","adj.","明智的；合情理的","Wearing sturdy hiking shoes is a sensible choice on rocky trails."],
+            ["sentence","n.","句子；判決","Try to write an example sentence for every new vocabulary word."],
+            ["serious","adj.","嚴肅的；嚴重的","Plastic pollution in the ocean has become a very serious problem."],
+            ["sightseeing","n.","觀光；遊覽","We spent the entire afternoon sightseeing around historic Kyoto."],
+            ["signature","n.","簽名；署名","Please put your signature at the bottom of the registration form."],
+            ["situation","n.","情況；情勢","Remaining calm will help you handle any difficult situation."],
+            ["solution","n.","解決方案；解答","The teacher helped students find a creative solution to the puzzle."],
+            ["souvenir","n.","紀念品","I bought a small ceramic magnet as a souvenir from the island."],
+            ["species","n.","物種","The Amazon rainforest is home to thousands of rare bird species."],
+            ["spectacular","adj.","壯觀的；引人入勝的","The fireworks display over the bay was absolutely spectacular."],
+            ["stadium","n.","體育場；競技場","Over fifty thousand cheering fans gathered in the football stadium."],
+            ["stranger","n.","陌生人","A friendly stranger helped us find the right exit in the station."],
+            ["succeed","v.","成功；繼承","If you work hard and never give up, you will succeed in your goals."],
+            ["suggestion","n.","建議；提議","Do you have any suggestions on how to improve our presentation?"],
+            ["suitable","adj.","合適的；適宜的","This gentle nature walk is suitable for children of all ages."],
+            ["surround","v.","包圍；環繞","The quiet countryside cottage is surrounded by beautiful green hills."],
+            // T
+            ["talented","adj.","有天賦的；才華橫溢的","The young pianist is exceptionally talented and plays with passion."],
+            ["technology","n.","科技；技術","Modern mobile technology allows us to study anywhere, anytime."],
+            ["temperature","n.","溫度；氣溫","The nurse measured his body temperature to see if he had a fever."],
+            ["temporary","adj.","暫時的；臨時的","The bridge was closed for temporary repairs after the typhoon."],
+            ["terrific","adj.","極好的；棒極了","You did a terrific job organizing the school cultural festival!"],
+            ["timetable","n.","時刻表；課表","Check the train timetable so we do not miss the last departure."],
+            ["tourist","n.","觀光客；遊客","The historic temple attracts thousands of foreign tourists daily."],
+            ["traditional","adj.","傳統的","We tried traditional handmade green tea during the Kyoto tea ceremony."],
+            ["traffic jam","n.","塞車；交通堵塞","We got stuck in a huge traffic jam on the freeway for two hours."],
+            ["translate","v.","翻譯","Can you translate this Japanese menu item into Chinese for me?"],
+            ["typical","adj.","典型的；有代表性的","A typical breakfast here includes hot soup, grilled fish, and rice."],
+            // U
+            ["unbelievable","adj.","難以置信的；驚人的","The acrobat performed unbelievable stunts high above the crowd."],
+            ["underground","adj. & n.","地下的；地鐵","Taking the underground is the fastest way to travel around London."],
+            ["unemployed","adj.","失業的","The government offers job training programs for unemployed adults."],
+            ["unexpected","adj.","意想不到的；意外的","Meeting an old friend on the train was a delightful unexpected surprise."],
+            ["unforgettable","adj.","難以忘懷的","Watching the cherry blossoms in spring was an unforgettable experience."],
+            ["unfortunately","adv.","不幸地；遺憾地","Unfortunately, the outdoor concert was cancelled due to the rain."],
+            ["universe","n.","宇宙；天地","Astronomers use telescopes to study galaxies in the vast universe."],
+            ["urgent","adj.","緊急的；迫切的","The doctor had to leave right away to attend to an urgent patient."],
+            // V
+            ["valuable","adj.","寶貴的；貴重的","Volunteering gave students valuable teamwork and leadership experience."],
+            ["variety","n.","多樣性；種類","The buffet offers a wide variety of fresh fruit and hot dishes."],
+            ["vehicle","n.","車輛；交通工具","Electric vehicles help reduce greenhouse gas emissions in cities."],
+            ["version","n.","版本","Make sure you download the latest version of the learning app."],
+            ["volunteer","n. & v.","志工；自願做","She volunteers at the municipal animal shelter every Saturday."],
+            // W
+            ["wardrobe","n.","衣櫃；全部服裝","She hung her winter coats and formal jackets inside the wardrobe."],
+            ["warning","n.","警告；告誡","The meteorologist issued a heavy rainfall warning for coastal areas."],
+            ["waste","n. & v.","浪費；廢棄物","Turn off lights when leaving rooms so you do not waste electricity."],
+            ["wildlife","n.","野生動植物","The national park was created to protect endangered local wildlife."],
+            ["willing","adj.","願意的；樂意的","The friendly guide was always willing to answer our travel questions."],
+            ["wonderful","adj.","精彩的；極好的","We had a wonderful family vacation traveling through the countryside."],
+            ["workout","n.","健身；體能鍛鍊","A thirty-minute workout every morning keeps you energized all day."],
+            // Y
+            ["youth","n.","青少年；青春","The community center hosts weekend sports activities for local youth."],
+            // Z
+            ["zone","n.","區域；地帶","Cars are not allowed to enter the pedestrian-only shopping zone."]
+        ];
+
+        // 轉換為正規物件
+        const VOCAB_DATABASE = RAW_DATA.map(item => ({
+            w: item[0],
+            p: item[1],
+            c: item[2],
+            ex: item[3]
+        }));
+
+        let currentBatch = [];
+        let currentCardIdx = 0;
+        let quizQuestions = [];
+        let quizCurrentIndex = 0;
+        let quizScore = 0;
+        let quizMistakes = [];
+        let batchCounter = 1;
+
+        // 安全取得/寫入 LocalStorage
+        function getSafeScore() {
+            try {
+                return localStorage.getItem('cambridge_pet_best_score') || 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+        function setSafeScore(val) {
+            try {
+                localStorage.setItem('cambridge_pet_best_score', val);
+            } catch (e) {}
+        }
+
+        // 發音功能
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'en-GB';
+                    u.rate = 0.9;
+                    window.speechSynthesis.speak(u);
+                } catch(e) {}
+            }
+        }
+
+        // Fisher-Yates 無偏洗牌，確保全 A-Z 均勻抽取 20 詞
+        function generateNewBatch() {
+            const pool = [...VOCAB_DATABASE];
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            currentBatch = pool.slice(0, 20);
+
+            const titleStr = `精選核心單字 (Batch #${batchCounter})`;
+            const bTitle = document.getElementById('batch-title');
+            const pTitle = document.getElementById('print-batch-title');
+            if (bTitle) bTitle.textContent = titleStr;
+            if (pTitle) pTitle.textContent = `Batch #${batchCounter}`;
+
+            renderTable(currentBatch);
+            setupFlashcards();
+            resetQuiz();
+        }
+
+        // 表格渲染
+        function renderTable(words) {
+            const tbody = document.getElementById('vocab-table-body');
+            const countEl = document.getElementById('table-count');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            if (countEl) countEl.textContent = words.length;
+
+            words.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
+
+                const tdIdx = document.createElement('td');
+                tdIdx.className = "py-3 px-3 text-center font-bold text-slate-400 text-sm";
+                tdIdx.textContent = index + 1;
+
+                const tdWord = document.createElement('td');
+                tdWord.className = "py-3.5 px-4";
+                tdWord.innerHTML = `
+                    <span class="print-word font-extrabold text-slate-900 text-lg tracking-tight">${escapeHtml(item.w)}</span>
+                    <span class="print-chinese text-sm font-bold text-indigo-700 block mt-0.5">${escapeHtml(item.c)}</span>
+                `;
+
+                const tdType = document.createElement('td');
+                tdType.className = "py-3 px-3 text-center";
+                tdType.innerHTML = `
+                    <span class="print-type inline-block bg-slate-100 text-slate-700 text-xs font-mono font-bold px-2.5 py-1 rounded">
+                        ${escapeHtml(item.p)}
+                    </span>
+                `;
+
+                const tdEx = document.createElement('td');
+                tdEx.className = "py-3.5 px-6 print-example text-slate-700 text-sm leading-relaxed italic";
+                tdEx.textContent = `"${item.ex}"`;
+
+                const tdAudio = document.createElement('td');
+                tdAudio.className = "py-3 px-2 text-center no-print";
+                const btnAudio = document.createElement('button');
+                btnAudio.className = "text-slate-400 hover:text-indigo-600 p-2 rounded-full hover:bg-indigo-50 transition";
+                btnAudio.title = "朗讀發音";
+                btnAudio.innerHTML = `<i class="fa-solid fa-volume-high text-base"></i>`;
+                btnAudio.onclick = () => speakWord(item.w);
+                tdAudio.appendChild(btnAudio);
+
+                tr.appendChild(tdIdx);
+                tr.appendChild(tdWord);
+                tr.appendChild(tdType);
+                tr.appendChild(tdEx);
+                tr.appendChild(tdAudio);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // 記憶翻牌卡
+        function setupFlashcards() {
+            currentCardIdx = 0;
+            updateCardDisplay();
+        }
+
+        function updateCardDisplay() {
+            if (currentBatch.length === 0) return;
+            const cardEl = document.getElementById('flashcard');
+            if (cardEl) cardEl.classList.remove('flipped');
+
+            const item = currentBatch[currentCardIdx];
+            document.getElementById('card-index').textContent = currentCardIdx + 1;
+            document.getElementById('card-word').textContent = item.w;
+            document.getElementById('card-pos-front').textContent = item.p;
+            document.getElementById('card-pos-back').textContent = item.p;
+            document.getElementById('card-chinese').textContent = item.c;
+            document.getElementById('card-example').textContent = `"${item.ex}"`;
+
+            const speakBtn = document.getElementById('card-speak-btn');
+            if (speakBtn) {
+                speakBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    speakWord(item.w);
+                };
+            }
+        }
+
+        // 測驗
+        function resetQuiz() {
+            const activeCard = document.getElementById('quiz-active-card');
+            const resCard = document.getElementById('quiz-result-card');
+            if (activeCard) activeCard.classList.remove('hidden');
+            if (resCard) resCard.classList.add('hidden');
+
+            quizQuestions = currentBatch.map(target => {
+                const distractors = VOCAB_DATABASE
+                    .filter(x => x.w !== target.w)
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 3)
+                    .map(x => x.c);
+
+                const opts = [target.c, ...distractors].sort(() => 0.5 - Math.random());
+                return {
+                    target: target,
+                    options: opts,
+                    userAnswer: null,
+                    isCorrect: false
+                };
+            });
+
+            quizCurrentIndex = 0;
+            quizScore = 0;
+            quizMistakes = [];
+            loadQuizQuestion(0);
+        }
+
+        function loadQuizQuestion(index) {
+            const q = quizQuestions[index];
+            if (!q) return;
+
+            document.getElementById('quiz-current-q').textContent = index + 1;
+            document.getElementById('quiz-score-badge').textContent = `得分: ${quizScore}`;
+            
+            const pct = (index / 20) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
+
+            document.getElementById('quiz-word').textContent = q.target.w;
+            document.getElementById('quiz-pos').textContent = q.target.p;
+            document.getElementById('quiz-speak-btn').onclick = () => speakWord(q.target.w);
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+
+            const optsBox = document.getElementById('quiz-options');
+            optsBox.innerHTML = '';
+
+            q.options.forEach(optText => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-sm text-slate-800 transition flex items-center justify-between";
+                btn.innerHTML = `<span>${escapeHtml(optText)}</span> <i class="fa-regular fa-circle text-slate-300"></i>`;
+                btn.onclick = () => handleQuizAnswer(optText, btn);
+                optsBox.appendChild(btn);
+            });
+        }
+
+        function handleQuizAnswer(selectedOption, clickedBtn) {
+            const q = quizQuestions[quizCurrentIndex];
+            const isCorrect = (selectedOption === q.target.c);
+            q.userAnswer = selectedOption;
+            q.isCorrect = isCorrect;
+
+            const allBtns = document.getElementById('quiz-options').querySelectorAll('button');
+            allBtns.forEach(btn => {
+                btn.disabled = true;
+                const optText = btn.querySelector('span').textContent;
+                if (optText === q.target.c) {
+                    btn.classList.remove('border-slate-200', 'bg-white');
+                    btn.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
+                    btn.querySelector('i').className = "fa-solid fa-circle-check text-emerald-600";
+                } else if (btn === clickedBtn && !isCorrect) {
+                    btn.classList.remove('border-slate-200', 'bg-white');
+                    btn.classList.add('border-rose-400', 'bg-rose-50', 'text-rose-800');
+                    btn.querySelector('i').className = "fa-solid fa-circle-xmark text-rose-500";
+                }
+            });
+
+            const fbBox = document.getElementById('quiz-feedback');
+            const fbText = document.getElementById('feedback-text');
+            const fbEx = document.getElementById('feedback-example');
+            fbBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-rose-50', 'text-rose-800');
+
+            if (isCorrect) {
+                quizScore += 1;
+                fbBox.classList.add('bg-emerald-50', 'text-emerald-800');
+                fbText.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-600"></i> 正確！答得很好。';
+            } else {
+                quizMistakes.push(q.target);
+                fbBox.classList.add('bg-rose-50', 'text-rose-800');
+                fbText.innerHTML = `<i class="fa-solid fa-xmark mr-1 text-rose-600"></i> 答錯了！正確答案是：<strong>${escapeHtml(q.target.c)}</strong>`;
+            }
+            fbEx.textContent = `例句: "${q.target.ex}"`;
+
+            document.getElementById('quiz-score-badge').textContent = `得分: ${quizScore}`;
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+
+        function showQuizResult() {
+            document.getElementById('quiz-active-card').classList.add('hidden');
+            document.getElementById('quiz-result-card').classList.remove('hidden');
+            document.getElementById('result-score').textContent = quizScore;
+
+            const best = parseInt(getSafeScore(), 10);
+            if (quizScore > best) {
+                setSafeScore(quizScore);
+                document.getElementById('best-score').textContent = quizScore;
+            }
+
+            const mistakesBox = document.getElementById('result-review-box');
+            const mistakesList = document.getElementById('result-mistakes');
+            mistakesList.innerHTML = '';
+
+            if (quizMistakes.length > 0) {
+                mistakesBox.classList.remove('hidden');
+                quizMistakes.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <span class="font-extrabold text-slate-900 text-sm">${escapeHtml(item.w)}</span>
+                            <span class="text-slate-400 font-mono">(${escapeHtml(item.p)})</span>
+                            <span class="text-indigo-700 font-bold ml-2">${escapeHtml(item.c)}</span>
+                        </div>
+                    `;
+                    const btn = document.createElement('button');
+                    btn.className = "text-slate-400 hover:text-indigo-600 p-1";
+                    btn.innerHTML = `<i class="fa-solid fa-volume-high"></i>`;
+                    btn.onclick = () => speakWord(item.w);
+                    div.appendChild(btn);
+                    mistakesList.appendChild(div);
+                });
+            } else {
+                mistakesBox.classList.add('hidden');
+            }
+        }
+
+        // 綁定所有事件
+        function setupEventListeners() {
+            const tabList = document.getElementById('tab-list');
+            const tabCards = document.getElementById('tab-cards');
+            const tabQuiz = document.getElementById('tab-quiz');
+
+            const viewList = document.getElementById('view-list');
+            const viewCards = document.getElementById('view-cards');
+            const viewQuiz = document.getElementById('view-quiz');
+
+            function switchTab(activeTab, activeView) {
+                [tabList, tabCards, tabQuiz].forEach(t => {
+                    t.classList.remove('border-indigo-600', 'text-indigo-600');
+                    t.classList.add('border-transparent', 'text-slate-500');
+                });
+                activeTab.classList.add('border-indigo-600', 'text-indigo-600');
+                activeTab.classList.remove('border-transparent', 'text-slate-500');
+
+                [viewList, viewCards, viewQuiz].forEach(v => v.classList.add('hidden'));
+                activeView.classList.remove('hidden');
+            }
+
+            const printBtn = document.getElementById('btn-print');
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    switchTab(tabList, viewList);
+                    setTimeout(() => { window.print(); }, 150);
+                });
+            }
+
+            const newBatchBtn = document.getElementById('btn-new-batch');
+            if (newBatchBtn) {
+                newBatchBtn.addEventListener('click', () => {
+                    batchCounter++;
+                    generateNewBatch();
+                });
+            }
+
+            const nextBatchBtn = document.getElementById('btn-next-batch');
+            if (nextBatchBtn) {
+                nextBatchBtn.addEventListener('click', () => {
+                    batchCounter++;
+                    generateNewBatch();
+                });
+            }
+
+            const filterInput = document.getElementById('filter-input');
+            if (filterInput) {
+                filterInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+                    const filtered = currentBatch.filter(item => 
+                        item.w.toLowerCase().includes(term) || 
+                        item.c.includes(term)
+                    );
+                    renderTable(filtered);
+                });
+            }
+
+            const flashcardEl = document.getElementById('flashcard');
+            if (flashcardEl) {
+                flashcardEl.addEventListener('click', function() {
+                    this.classList.toggle('flipped');
+                });
+            }
+
+            const cardPrev = document.getElementById('card-prev');
+            if (cardPrev) {
+                cardPrev.addEventListener('click', () => {
+                    if (currentCardIdx > 0) {
+                        currentCardIdx--;
+                        updateCardDisplay();
+                    }
+                });
+            }
+
+            const cardNext = document.getElementById('card-next');
+            if (cardNext) {
+                cardNext.addEventListener('click', () => {
+                    if (currentCardIdx < currentBatch.length - 1) {
+                        currentCardIdx++;
+                        updateCardDisplay();
+                    }
+                });
+            }
+
+            const quizNext = document.getElementById('quiz-next-btn');
+            if (quizNext) {
+                quizNext.addEventListener('click', () => {
+                    if (quizCurrentIndex < 19) {
+                        quizCurrentIndex++;
+                        loadQuizQuestion(quizCurrentIndex);
+                    } else {
+                        document.getElementById('quiz-progress-bar').style.width = '100%';
+                        showQuizResult();
+                    }
+                });
+            }
+
+            const quizRetry = document.getElementById('btn-quiz-retry');
+            if (quizRetry) quizRetry.addEventListener('click', resetQuiz);
+
+            const quizNewBatch = document.getElementById('btn-quiz-new-batch');
+            if (quizNewBatch) {
+                quizNewBatch.addEventListener('click', () => {
+                    batchCounter++;
+                    generateNewBatch();
+                    resetQuiz();
+                });
